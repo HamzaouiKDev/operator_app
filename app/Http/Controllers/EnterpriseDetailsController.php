@@ -27,7 +27,7 @@ class EnterpriseDetailsController extends Controller
         $contacts = ContactEntreprise::where('entreprise_id', $entreprise->id)->get();
         $rendezVous = RendezVous::where('echantillon_enquete_id', $echantillon->id)->get();
 
-        return view('entreprise.show', compact('entreprise', 'telephones', 'contacts', 'echantillon', 'rendezVous'));
+        return view('index', compact('entreprise', 'telephones', 'contacts', 'echantillon', 'rendezVous'));
     }
 
     public function storeTelephone(Request $request, $entreprise_id)

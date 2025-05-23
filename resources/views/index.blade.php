@@ -1,394 +1,278 @@
 @extends('layouts.master')
 @section('css')
-<!--  Owl-carousel css-->
+<!-- Owl-carousel css -->
 <link href="{{URL::asset('assets/plugins/owl-carousel/owl.carousel.css')}}" rel="stylesheet" />
 <!-- Maps css -->
 <link href="{{URL::asset('assets/plugins/jqvmap/jqvmap.min.css')}}" rel="stylesheet">
+<!-- Icones typcn pour un style amélioré -->
+<link href="{{URL::asset('assets/plugins/iconfonts/plugin.css')}}" rel="stylesheet" />
 @endsection
 @section('page-header')
-				<!-- breadcrumb -->
-				<div class="breadcrumb-header justify-content-between">
-					<div class="left-content">
-						<div>
-						  <h2 class="main-content-title tx-24 mg-b-1 mg-b-lg-1">Hi, welcome back!</h2>
-						  <p class="mg-b-0">Sales monitoring dashboard template.</p>
-						</div>
-					</div>
-					<div class="main-dashboard-header-right">
-						<div>
-							<label class="tx-13">Customer Ratings</label>
-							<div class="main-star">
-								<i class="typcn typcn-star active"></i> <i class="typcn typcn-star active"></i> <i class="typcn typcn-star active"></i> <i class="typcn typcn-star active"></i> <i class="typcn typcn-star"></i> <span>(14,873)</span>
-							</div>
-						</div>
-						<div>
-							<label class="tx-13">Online Sales</label>
-							<h5>563,275</h5>
-						</div>
-						<div>
-							<label class="tx-13">Offline Sales</label>
-							<h5>783,675</h5>
-						</div>
-					</div>
-				</div>
-				<!-- /breadcrumb -->
+    <!-- breadcrumb -->
+    <div class="breadcrumb-header justify-content-between" style="background-color: #3498db;">
+        <div class="left-content">
+            <div>
+                <h2 class="main-content-title tx-24 mg-b-1 mg-b-lg-1 text-white" dir="rtl">مرحباً، مرحباً بك مجدداً!</h2>
+                <p class="mg-b-0 text-white" dir="rtl">قالب لوحة تحكم لمراقبة المبيعات.</p>
+            </div>
+        </div>
+        <div class="main-dashboard-header-right">
+            <div>
+                <label class="tx-13 text-white" dir="rtl">تقييمات العملاء</label>
+                <div class="main-star">
+                    <i class="typcn typcn-star active"></i> <i class="typcn typcn-star active"></i> <i class="typcn typcn-star active"></i> <i class="typcn typcn-star active"></i> <i class="typcn typcn-star"></i> <span>(14,873)</span>
+                </div>
+            </div>
+            <div>
+                <label class="tx-13 text-white" dir="rtl">المبيعات عبر الإنترنت</label>
+                <h5 class="text-white">563,275</h5>
+            </div>
+            <div>
+                <label class="tx-13 text-white" dir="rtl">المبيعات غير المتصلة</label>
+                <h5 class="text-white">783,675</h5>
+            </div>
+        </div>
+    </div>
+    <!-- /breadcrumb -->
 @endsection
 @section('content')
-				<!-- row -->
-				<div class="row row-sm">
-					<div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-						<div class="card overflow-hidden sales-card bg-primary-gradient">
-							<div class="pl-3 pt-3 pr-3 pb-2 pt-0">
-								<div class="">
-									<h6 class="mb-3 tx-12 text-white">TODAY ORDERS</h6>
-								</div>
-								<div class="pb-0 mt-0">
-									<div class="d-flex">
-										<div class="">
-											<h4 class="tx-20 font-weight-bold mb-1 text-white">$5,74.12</h4>
-											<p class="mb-0 tx-12 text-white op-7">Compared to last week</p>
-										</div>
-										<span class="float-right my-auto mr-auto">
-											<i class="fas fa-arrow-circle-up text-white"></i>
-											<span class="text-white op-7"> +427</span>
-										</span>
-									</div>
-								</div>
-							</div>
-							<span id="compositeline" class="pt-1">5,9,5,6,4,12,18,14,10,15,12,5,8,5,12,5,12,10,16,12</span>
-						</div>
-					</div>
-					<div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-						<div class="card overflow-hidden sales-card bg-danger-gradient">
-							<div class="pl-3 pt-3 pr-3 pb-2 pt-0">
-								<div class="">
-									<h6 class="mb-3 tx-12 text-white">TODAY EARNINGS</h6>
-								</div>
-								<div class="pb-0 mt-0">
-									<div class="d-flex">
-										<div class="">
-											<h4 class="tx-20 font-weight-bold mb-1 text-white">$1,230.17</h4>
-											<p class="mb-0 tx-12 text-white op-7">Compared to last week</p>
-										</div>
-										<span class="float-right my-auto mr-auto">
-											<i class="fas fa-arrow-circle-down text-white"></i>
-											<span class="text-white op-7"> -23.09%</span>
-										</span>
-									</div>
-								</div>
-							</div>
-							<span id="compositeline2" class="pt-1">3,2,4,6,12,14,8,7,14,16,12,7,8,4,3,2,2,5,6,7</span>
-						</div>
-					</div>
-					<div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-						<div class="card overflow-hidden sales-card bg-success-gradient">
-							<div class="pl-3 pt-3 pr-3 pb-2 pt-0">
-								<div class="">
-									<h6 class="mb-3 tx-12 text-white">TOTAL EARNINGS</h6>
-								</div>
-								<div class="pb-0 mt-0">
-									<div class="d-flex">
-										<div class="">
-											<h4 class="tx-20 font-weight-bold mb-1 text-white">$7,125.70</h4>
-											<p class="mb-0 tx-12 text-white op-7">Compared to last week</p>
-										</div>
-										<span class="float-right my-auto mr-auto">
-											<i class="fas fa-arrow-circle-up text-white"></i>
-											<span class="text-white op-7"> 52.09%</span>
-										</span>
-									</div>
-								</div>
-							</div>
-							<span id="compositeline3" class="pt-1">5,10,5,20,22,12,15,18,20,15,8,12,22,5,10,12,22,15,16,10</span>
-						</div>
-					</div>
-					<div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-						<div class="card overflow-hidden sales-card bg-warning-gradient">
-							<div class="pl-3 pt-3 pr-3 pb-2 pt-0">
-								<div class="">
-									<h6 class="mb-3 tx-12 text-white">PRODUCT SOLD</h6>
-								</div>
-								<div class="pb-0 mt-0">
-									<div class="d-flex">
-										<div class="">
-											<h4 class="tx-20 font-weight-bold mb-1 text-white">$4,820.50</h4>
-											<p class="mb-0 tx-12 text-white op-7">Compared to last week</p>
-										</div>
-										<span class="float-right my-auto mr-auto">
-											<i class="fas fa-arrow-circle-down text-white"></i>
-											<span class="text-white op-7"> -152.3</span>
-										</span>
-									</div>
-								</div>
-							</div>
-							<span id="compositeline4" class="pt-1">5,9,5,6,4,12,18,14,10,15,12,5,8,5,12,5,12,10,16,12</span>
-						</div>
-					</div>
-				</div>
-				<!-- row closed -->
+    <div class="container-fluid" dir="rtl">
+        <div class="row row-sm">
+            <div class="col-lg-12">
+                <div class="card mg-b-20 shadow-sm" style="border-color: #3498db;">
+                    <div class="card-header pb-0 text-right text-white" style="background-color: #3498db;">
+                        <h4 class="card-title mg-b-0 tx-22">تفاصيل الشركة <i class="typcn typcn-building ml-2"></i></h4>
+                    </div>
+                    <div class="card-body">
+                        @if (session('success'))
+                            <div class="alert alert-success mg-b-0 text-right" role="alert" style="background-color: #2ecc71; border-color: #2ecc71; color: white;">
+                                {{ session('success') }}
+                            </div>
+                        @endif
 
-				<body class="bg-gray-100">
-    <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-6 text-center">Détails de l'entreprise</h1>
+                        <!-- Enterprise Details -->
+                        <div class="card mg-b-20 shadow-sm" style="border-color: #1abc9c;">
+                            <div class="card-header pb-0 text-right text-white" style="background-color: #1abc9c;">
+                                <h5 class="card-title mg-b-0 tx-18">معلومات الشركة <i class="typcn typcn-info-large-outline ml-2"></i></h5>
+                            </div>
+                            <div class="card-body text-right">
+                                <ul class="list-group list-group-flush text-right">
+                                    <li class="list-group-item"><strong>الرمز الوطني:</strong> {{ $entreprise->code_national }}</li>
+                                    <li class="list-group-item"><strong>الاسم:</strong> {{ $entreprise->nom_entreprise }}</li>
+                                    <li class="list-group-item"><strong>النشاط:</strong> {{ $entreprise->libelle_activite }}</li>
+                                    <li class="list-group-item"><strong>العنوان:</strong> {{ $entreprise->numero_rue }} {{ $entreprise->nom_rue }}، {{ $entreprise->ville }}، {{ $entreprise->gouvernorat }}</li>
+                                    <li class="list-group-item"><strong>الحالة:</strong> {{ $entreprise->statut }}</li>
+                                    @if ($entreprise->adresse_cnss)
+                                        <li class="list-group-item"><strong>عنوان CNSS:</strong> {{ $entreprise->adresse_cnss }}</li>
+                                    @endif
+                                    @if ($entreprise->localite_cnss)
+                                        <li class="list-group-item"><strong>موقع CNSS:</strong> {{ $entreprise->localite_cnss }}</li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </div>
 
-        @if (session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 mx-auto max-w-2xl" role="alert">
-                {{ session('success') }}
+                        <!-- Phone Numbers -->
+                        <div class="card mg-b-20 shadow-sm" style="border-color: #3498db;">
+                            <div class="card-header pb-0 text-right text-white" style="background-color: #3498db;">
+                                <h5 class="card-title mg-b-0 tx-18">أرقام الهاتف <i class="typcn typcn-phone ml-2"></i></h5>
+                            </div>
+                            <div class="card-body text-right">
+                                @if ($telephones->isEmpty())
+                                    <p class="text-muted">لا توجد أرقام هاتف مسجلة.</p>
+                                @else
+                                    <div class="table-responsive">
+                                        <table class="table table-striped mg-b-0 text-md-nowrap">
+                                            <thead>
+                                                <tr>
+                                                    <th class="tx-16 fw-bold">رقم الهاتف</th>
+                                                    <th class="tx-16 fw-bold">أساسي</th>
+                                                    <th class="tx-16 fw-bold">المصدر</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($telephones as $telephone)
+                                                    <tr>
+                                                        <td>{{ $telephone->numero }}</td>
+                                                        <td>{{ $telephone->est_primaire ? 'نعم' : 'لا' }}</td>
+                                                        <td>{{ $telephone->source ?? 'غير متوفر' }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Contacts -->
+                        <div class="card mg-b-20 shadow-sm" style="border-color: #2ecc71;">
+                            <div class="card-header pb-0 text-right text-white" style="background-color: #2ecc71;">
+                                <h5 class="card-title mg-b-0 tx-18">جهات الاتصال <i class="typcn typcn-user ml-2"></i></h5>
+                            </div>
+                            <div class="card-body text-right">
+                                @if ($contacts->isEmpty())
+                                    <p class="text-muted">لا توجد جهات اتصال مسجلة.</p>
+                                @else
+                                    <div class="table-responsive">
+                                        <table class="table table-striped mg-b-0 text-md-nowrap">
+                                            <thead>
+                                                <tr>
+                                                    <th class="tx-16 fw-bold">اللقب</th>
+                                                    <th class="tx-16 fw-bold">الاسم الأول</th>
+                                                    <th class="tx-16 fw-bold">الاسم الأخير</th>
+                                                    <th class="tx-16 fw-bold">المنصب</th>
+                                                    <th class="tx-16 fw-bold">البريد الإلكتروني</th>
+                                                    <th class="tx-16 fw-bold">الهاتف</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($contacts as $contact)
+                                                    <tr>
+                                                        <td>{{ $contact->civilite ?? 'غير متوفر' }}</td>
+                                                        <td>{{ $contact->prenom }}</td>
+                                                        <td>{{ $contact->nom }}</td>
+                                                        <td>{{ $contact->poste ?? 'غير متوفر' }}</td>
+                                                        <td>{{ $contact->email ?? 'غير متوفر' }}</td>
+                                                        <td>{{ $contact->telephone ?? 'غير متوفر' }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-center">
+                            <button id="btnTelephoneModal" class="btn btn-primary mg-r-10 tx-16" style="background-color: #3498db; border-color: #3498db;">إضافة رقم هاتف <i class="typcn typcn-phone ml-1"></i></button>
+                            <button id="btnContactModal" class="btn btn-success mg-r-10 tx-16" style="background-color: #2ecc71; border-color: #2ecc71;">إضافة جهة اتصال <i class="typcn typcn-user-add ml-1"></i></button>
+                        </div>
+                    </div>
+                </div>
             </div>
-        @endif
-
-        <!-- Enterprise Details -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 class="text-lg font-semibold mb-4 text-gray-800">Entreprise</h3>
-            <ul class="list-none space-y-2">
-                <li><span class="font-medium">Code National:</span> {{ $entreprise->code_national }}</li>
-                <li><span class="font-medium">Nom:</span> {{ $entreprise->nom_entreprise }}</li>
-                <li><span class="font-medium">Activité:</span> {{ $entreprise->libelle_activite }}</li>
-                <li><span class="font-medium">Adresse:</span> {{ $entreprise->numero_rue }} {{ $entreprise->nom_rue }}, {{ $entreprise->ville }}, {{ $entreprise->gouvernorat }}</li>
-                <li><span class="font-medium">Statut:</span> {{ $entreprise->statut }}</li>
-                @if ($entreprise->adresse_cnss)
-                    <li><span class="font-medium">Adresse CNSS:</span> {{ $entreprise->adresse_cnss }}</li>
-                @endif
-                @if ($entreprise->localite_cnss)
-                    <li><span class="font-medium">Localité CNSS:</span> {{ $entreprise->localite_cnss }}</li>
-                @endif
-            </ul>
-        </div>
-
-        <!-- Phone Numbers -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 class="text-lg font-semibold mb-4 text-gray-800">Numéros de téléphone</h3>
-            @if ($telephones->isEmpty())
-                <p class="text-gray-600">Aucun numéro de téléphone enregistré.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border border-gray-200">
-                        <thead class="bg-blue-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-blue-800 border-b border-blue-200">Numéro</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-blue-800 border-b border-blue-200">Principal</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-blue-800 border-b border-blue-200">Source</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($telephones as $telephone)
-                                <tr class="{{ $loop->even ? 'bg-blue-50' : 'bg-white' }} hover:bg-blue-100 transition-colors">
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $telephone->numero }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $telephone->est_primaire ? 'Oui' : 'Non' }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $telephone->source ?? 'N/A' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-        </div>
-
-        <!-- Contacts -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 class="text-lg font-semibold mb-4 text-gray-800">Personnes de contact</h3>
-            @if ($contacts->isEmpty())
-                <p class="text-gray-600">Aucune personne de contact enregistrée.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border border-gray-200">
-                        <thead class="bg-green-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-green-800 border-b border-green-200">Civilité</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-green-800 border-b border-green-200">Prénom</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-green-800 border-b border-green-200">Nom</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-green-800 border-b border-green-200">Poste</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-green-800 border-b border-green-200">Email</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-green-800 border-b border-green-200">Téléphone</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($contacts as $contact)
-                                <tr class="{{ $loop->even ? 'bg-green-50' : 'bg-white' }} hover:bg-green-100 transition-colors">
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $contact->civilite ?? 'N/A' }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $contact->prenom }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $contact->nom }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $contact->poste ?? 'N/A' }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $contact->email ?? 'N/A' }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $contact->telephone ?? 'N/A' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-        </div>
-
-        <!-- Rendez-vous -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 class="text-lg font-semibold mb-4 text-gray-800">Rendez-vous</h3>
-            @if ($rendezVous->isEmpty())
-                <p class="text-gray-600">Aucun rendez-vous enregistré.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border border-gray-200">
-                        <thead class="bg-purple-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-purple-800 border-b border-purple-200">Heure de début</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-purple-800 border-b border-purple-200">Heure de fin</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-purple-800 border-b border-purple-200">Statut</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-purple-800 border-b border-purple-200">Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($rendezVous as $rdv)
-                                <tr class="{{ $loop->even ? 'bg-purple-50' : 'bg-white' }} hover:bg-purple-100 transition-colors">
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $rdv->heure_debut ? \Carbon\Carbon::parse($rdv->heure_debut)->format('d/m/Y H:i') : 'N/A' }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $rdv->heure_fin ? \Carbon\Carbon::parse($rdv->heure_fin)->format('d/m/Y H:i') : 'N/A' }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $rdv->statut }}</td>
-                                    <td class="px-4 py-2 border-b border-gray-200 text-sm text-gray-700">{{ $rdv->notes ?? 'N/A' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-        </div>
-
-        <!-- Buttons -->
-        <div class="flex justify-center space-x-4">
-            <button onclick="openModal('telephoneModal')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Ajouter un numéro de téléphone</button>
-            <button onclick="openModal('contactModal')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">Ajouter une personne de contact</button>
-            <button onclick="openModal('rendezVousModal')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">Ajouter un rendez-vous</button>
         </div>
 
         <!-- Modal pour ajouter un numéro de téléphone -->
-        <div id="telephoneModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h3 class="text-lg font-semibold mb-4">Ajouter un numéro de téléphone</h3>
-                <form action="{{ route('entreprise.telephone.store', $entreprise->id) }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="numero" class="block text-sm font-medium text-gray-700">Numéro</label>
-                        <input type="text" name="numero" id="numero" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+        <div id="telephoneModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="telephoneModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header text-right text-white" style="background-color: #3498db;">
+                        <h5 class="modal-title tx-18" id="telephoneModalLabel">إضافة رقم هاتف</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="closeTelephoneModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-                    <div>
-                        <label for="source" class="block text-sm font-medium text-gray-700">Source</label>
-                        <input type="text" name="source" id="source" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <div class="modal-body text-right">
+                        <form action="{{ route('entreprise.telephone.store', $entreprise->id) }}" method="POST" class="parsley-style-1" data-parsley-validate novalidate>
+                            @csrf
+                            <div class="form-group">
+                                <label for="numero" class="tx-bold">رقم الهاتف <span class="tx-danger">*</span></label>
+                                <input type="text" name="numero" id="numero" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="source" class="tx-bold">المصدر</label>
+                                <input type="text" name="source" id="source" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="ckbox">
+                                    <input type="checkbox" name="est_primaire" id="est_primaire" value="1">
+                                    <span>رقم أساسي</span>
+                                </label>
+                            </div>
+                            <div class="form-group text-right mg-b-0">
+                                <button type="button" class="btn btn-secondary mg-r-5" data-dismiss="modal">إلغاء</button>
+                                <button type="submit" class="btn btn-primary" style="background-color: #3498db; border-color: #3498db;">إضافة</button>
+                            </div>
+                        </form>
                     </div>
-                    <div>
-                        <label for="est_primaire" class="inline-flex items-center">
-                            <input type="checkbox" name="est_primaire" id="est_primaire" value="1" class="rounded border-gray-300">
-                            <span class="ml-2 text-sm text-gray-700">Numéro principal</span>
-                        </label>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeModal('telephoneModal')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md">Annuler</button>
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Ajouter</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
 
         <!-- Modal pour ajouter une personne de contact -->
-        <div id="contactModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h3 class="text-lg font-semibold mb-4">Ajouter une personne de contact</h3>
-                <form action="{{ route('entreprise.contact.store', $entreprise->id) }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="civilite" class="block text-sm font-medium text-gray-700">Civilité</label>
-                        <input type="text" name="civilite" id="civilite" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+        <div id="contactModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="contactModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header text-right text-white" style="background-color: #2ecc71;">
+                        <h5 class="modal-title tx-18" id="contactModalLabel">إضافة جهة اتصال</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="closeContactModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-                    <div>
-                        <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom</label>
-                        <input type="text" name="prenom" id="prenom" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                    <div class="modal-body text-right">
+                        <form action="{{ route('entreprise.contact.store', $entreprise->id) }}" method="POST" class="parsley-style-1" data-parsley-validate novalidate>
+                            @csrf
+                            <div class="form-group">
+                                <label for="civilite" class="tx-bold">اللقب</label>
+                                <input type="text" name="civilite" id="civilite" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="prenom" class="tx-bold">الاسم الأول <span class="tx-danger">*</span></label>
+                                <input type="text" name="prenom" id="prenom" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nom" class="tx-bold">الاسم الأخير <span class="tx-danger">*</span></label>
+                                <input type="text" name="nom" id="nom" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email" class="tx-bold">البريد الإلكتروني</label>
+                                <input type="email" name="email" id="email" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="telephone" class="tx-bold">الهاتف</label>
+                                <input type="text" name="telephone" id="telephone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="poste" class="tx-bold">المنصب</label>
+                                <input type="text" name="poste" id="poste" class="form-control">
+                            </div>
+                            <div class="form-group text-right mg-b-0">
+                                <button type="button" class="btn btn-secondary mg-r-5" data-dismiss="modal">إلغاء</button>
+                                <button type="submit" class="btn btn-primary" style="background-color: #2ecc71; border-color: #2ecc71;">إضافة</button>
+                            </div>
+                        </form>
                     </div>
-                    <div>
-                        <label for="nom" class="block text-sm font-medium text-gray-700">Nom</label>
-                        <input type="text" name="nom" id="nom" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" name="email" id="email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div>
-                        <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone</label>
-                        <input type="text" name="telephone" id="telephone" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div>
-                        <label for="poste" class="block text-sm font-medium text-gray-700">Poste</label>
-                        <input type="text" name="poste" id="poste" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeModal('contactModal')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md">Annuler</button>
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Ajouter</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Modal pour ajouter un rendez-vous -->
-        <div id="rendezVousModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h3 class="text-lg font-semibold mb-4">Ajouter un rendez-vous</h3>
-                <form action="{{ route('entreprise.rendezvous.store', $echantillon->id) }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="heure_debut" class="block text-sm font-medium text-gray-700">Heure de début</label>
-                        <input type="datetime-local" name="heure_debut" id="heure_debut" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
-                    <div>
-                        <label for="heure_fin" class="block text-sm font-medium text-gray-700">Heure de fin</label>
-                        <input type="datetime-local" name="heure_fin" id="heure_fin" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                    </div>
-                    <div>
-                        <label for="statut" class="block text-sm font-medium text-gray-700">Statut</label>
-                        <select name="statut" id="statut" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                            <option value="Planifié">Planifié</option>
-                            <option value="Confirmé">Confirmé</option>
-                            <option value="Annulé">Annulé</option>
-                            <option value="Terminé">Terminé</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
-                        <textarea name="notes" id="notes" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeModal('rendezVousModal')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md">Annuler</button>
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Ajouter</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
-
-    <script>
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-    </script>
-		<!-- Container closed -->
 @endsection
 @section('js')
-<!--Internal  Chart.bundle js -->
+<!-- Internal Chart.bundle js -->
 <script src="{{URL::asset('assets/plugins/chart.js/Chart.bundle.min.js')}}"></script>
 <!-- Moment js -->
 <script src="{{URL::asset('assets/plugins/raphael/raphael.min.js')}}"></script>
-<!--Internal  Flot js-->
+<!-- Internal Flot js -->
 <script src="{{URL::asset('assets/plugins/jquery.flot/jquery.flot.js')}}"></script>
 <script src="{{URL::asset('assets/plugins/jquery.flot/jquery.flot.pie.js')}}"></script>
 <script src="{{URL::asset('assets/plugins/jquery.flot/jquery.flot.resize.js')}}"></script>
 <script src="{{URL::asset('assets/plugins/jquery.flot/jquery.flot.categories.js')}}"></script>
 <script src="{{URL::asset('assets/js/dashboard.sampledata.js')}}"></script>
 <script src="{{URL::asset('assets/js/chart.flot.sampledata.js')}}"></script>
-<!--Internal Apexchart js-->
+<!-- Internal Apexchart js -->
 <script src="{{URL::asset('assets/js/apexcharts.js')}}"></script>
 <!-- Internal Map -->
 <script src="{{URL::asset('assets/plugins/jqvmap/jquery.vmap.min.js')}}"></script>
 <script src="{{URL::asset('assets/plugins/jqvmap/maps/jquery.vmap.usa.js')}}"></script>
 <script src="{{URL::asset('assets/js/modal-popup.js')}}"></script>
-<!--Internal  index js -->
+<!-- Internal index js -->
 <script src="{{URL::asset('assets/js/index.js')}}"></script>
-<script src="{{URL::asset('assets/js/jquery.vmap.sampledata.js')}}"></script>	
+<script src="{{URL::asset('assets/js/jquery.vmap.sampledata.js')}}"></script>
+<!-- Script pour gérer les modals -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Boutons pour ouvrir les modals
+        document.getElementById('btnTelephoneModal').addEventListener('click', function (e) {
+            e.preventDefault();
+            $('#telephoneModal').modal('show');
+        });
+
+        document.getElementById('btnContactModal').addEventListener('click', function (e) {
+            e.preventDefault();
+            $('#contactModal').modal('show');
+        });
+    });
+</script>
 @endsection
