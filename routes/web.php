@@ -45,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [RendezVousController::class, 'index'])->name('index');
         Route::get('/entreprise/{rendezVousId}', [RendezVousController::class, 'showByEntreprise'])->name('entreprise');
         Route::post('/store/{id}', [RendezVousController::class, 'store'])->name('store');
+        Route::get('/aujourdhui', [RendezVousController::class, 'aujourdhui'])->name('aujourdhui');
     });
 
     // Routes pour ajouter des informations à une entreprise
@@ -88,9 +89,10 @@ Route::post('/telephones/get-or-create-for-contact', [TelephoneController::class
 Route::prefix('echantillons')->name('echantillons.')->group(function () {
     // ... autres routes echantillons ...
     Route::post('/appel/demarrer', [EchantillonController::class, 'demarrerAppel'])->name('demarrerAppel');
+    Route::post('/{echantillon}/refus', [EchantillonController::class, 'markAsRefused'])->name('echantillons.refus');
     // ...
 });
 
-
+Route::post('/relances', [SuiviController::class, 'creerRappel'])->name('relances.store');
 
 ?>

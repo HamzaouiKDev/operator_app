@@ -99,8 +99,9 @@
                                                 <button id="btnAjouterRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c; flex-grow: 1;"><i class="typcn typcn-calendar ml-1"></i> إضافة موعد</button>
                                                 <button id="btnVoirScript" class="btn btn-warning" style="background-color: #f39c12; border-color: #f39c12; flex-grow: 1;"><i class="typcn typcn-document-text ml-1"></i> عرض نص المكالمة</button>
                                                 <button id="btnVoirQuestionnaire" class="btn btn-secondary" style="background-color: #95a5a6; border-color: #95a5a6; color:white; flex-grow: 1;"><i class="typcn typcn-document-add ml-1"></i> الاستبيان</button>
+                                                <button id="btnRefusAppel" class="btn btn-danger" style="display: none; flex-grow: 1;"><i class="typcn typcn-user-delete ml-1"></i> رفض</button> 
                                             </div>
-                                            <button id="btnRelance" class="btn btn-outline-warning btn-block" data-echantillon-id="{{ $echantillon->id }}"><i class="typcn typcn-arrow-sync ml-1"></i> تسجيل ملاحظة / متابعة</button>
+                                            <button id="btnRelance" class="btn btn-outline-warning btn-block" data-echantillon-id="{{ $echantillon->id }}"><i class="typcn typcn-arrow-sync ml-1"></i> إعادة الإتصال</button>
                                         </div>
                                     @else
                                         <p class="text-muted mt-2">لا يمكن بدء المكالمة لهذه العينة.</p>
@@ -244,9 +245,8 @@
                             <select id="statutNumeroAppel" class="form-control">
                                 <option value="valide" selected>صالح (لبدء المكالمة)</option>
                                 <option value="faux_numero">رقم خاطئ</option>
-                                <option value="pas_programme">غير مبرمج / لا يرد</option>
+                                <option value="pas_programme">غير مبرمج</option>
                                 <option value="ne_pas_deranger">عدم الإزعاج</option>
-                                <option value="non_verifie">لم يتم التحقق منه</option> {{-- Option ajoutée --}}
                             </select>
                         </div>
                         <p id="selectedPhoneNumberInfo" class="mt-2 font-weight-bold" style="display:none;">الرقم المختار: <span id="numeroChoisiText" style="color: #007bff;"></span></p>
@@ -261,6 +261,33 @@
         </div>
 
         {{-- Autres Modales (RendezVous, Telephone, Email, Contact, Script Appel) --}}
+        <div class="modal fade" id="causeSuiviModal" tabindex="-1" role="dialog" aria-labelledby="causeSuiviModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #f39c12; color: white;">
+                <h5 class="modal-title" id="causeSuiviModalLabel">Choisir la cause du suivi</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-right">
+                <div class="form-group">
+                    <label for="causeSuiviSelect">سبب إعادة الإتصال<span class="text-danger">*</span></label>
+                    <select class="form-control" id="causeSuiviSelect" name="cause_suivi" required>
+                        <option value="">إختر أحد الأسباب</option>
+                        <option value="Personne inappropriée">ليس هناك رد</option>
+                        <option value="Pas de réponse">لم أجد الشخص المناسب للإجابة </option>
+                        <option value="Autres causes">أسباب أخرى</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmerCauseSuivi">Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
         @if(isset($echantillon) && $echantillon && $echantillon->entreprise)
             {{-- Modale RendezVous --}}
             <div class="modal fade" id="rendezVousModal" tabindex="-1" role="dialog" aria-labelledby="rendezVousModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background-color: #1abc9c; color: white;"><h5 class="modal-title" id="rendezVousModalLabel">إضافة موعد جديد</h5><button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-right"><form id="formAjouterRendezVous" action="{{ route('rendezvous.store', ['id' => $echantillon->id]) }}" method="POST">@csrf<div class="form-group"><label for="dateRdv">تاريخ ووقت الموعد <span class="text-danger">*</span></label><input type="datetime-local" class="form-control" id="dateRdv" name="heure_debut" required></div><div class="form-group"><label for="lieuRdv">مكان الموعد (ملاحظات)</label><input type="text" class="form-control" id="lieuRdv" name="lieu_rdv_notes" placeholder="أدخل مكان الموعد أو تفاصيل"></div><div class="form-group"><label for="contactIdRdv">جهة الاتصال (اختياري)</label>@if(isset($echantillon->entreprise) && $echantillon->entreprise->contacts->isNotEmpty())<select class="form-control" id="contactIdRdv" name="contact_id"><option value="">بدون جهة اتصال محددة</option>@foreach($echantillon->entreprise->contacts as $contact)<option value="{{ $contact->id }}">{{ $contact->prenom }} {{ $contact->nom }} {{ $contact->poste ? '(' . $contact->poste . ')' : '' }}</option>@endforeach</select>@else<input type="text" class="form-control" id="contactNomRdv" name="contact_nom" placeholder="أدخل اسم جهة الاتصال (اختياري)"><small class="form-text text-muted">لا توجد جهات اتصال مسجلة.</small>@endif</div><div class="form-group"><label for="notesRdv">ملاحظات إضافية للموعد (اختياري)</label><textarea class="form-control" id="notesRdv" name="notes" rows="3" placeholder="أدخل ملاحظات حول الموعد"></textarea></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button><button type="button" id="btnSubmitRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c;">حفظ الموعد</button></div></form></div></div></div></div>
@@ -380,6 +407,7 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        
         console.log('🚀 PAGE INDEX CHARGÉE - JS MODIFIÉ EN COURS 🚀');
         const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
@@ -440,33 +468,34 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
             setupModalButton('statutDisplay', '#statutModal'); 
         }
         
-        function updateCallUI(calling, appelData = null) {
-            console.log(`🔄 updateCallUI - Appel en cours demandé: ${calling}, Données d'appel reçues:`, appelData);
-            isCalling = calling; 
-            currentAppelId = appelData ? appelData.id : null;
-            console.log(`    Nouveau statut UI: isCalling = ${isCalling}, currentAppelId = ${currentAppelId}`);
-            
-            const btnLancerAppelElem = document.getElementById('btnLancerAppel'); // Récupérer l'élément à chaque fois ou le stocker globalement si sûr
-            const appelActionsElem = document.getElementById('appelActions');
-            const notesAppelTextareaElem = document.getElementById('notesAppel');
+       function updateCallUI(calling, appelData = null) {
+    console.log(`🔄 updateCallUI - Appel en cours demandé: ${calling}, Données d'appel reçues:`, appelData);
+    isCalling = calling;
+    currentAppelId = appelData ? appelData.id : null;
+    console.log(`    Nouveau statut UI: isCalling = ${isCalling}, currentAppelId = ${currentAppelId}`);
 
+    const btnLancerAppelElem = document.getElementById('btnLancerAppel');
+    const appelActionsElem = document.getElementById('appelActions');
+    const notesAppelTextareaElem = document.getElementById('notesAppel');
+    const btnRefusAppelElem = document.getElementById('btnRefusAppel'); // Récupérer l'élément du bouton Refus
 
-            if (!btnLancerAppelElem) { console.warn("Bouton '#btnLancerAppel' non trouvé dans updateCallUI."); return; }
+    if (!btnLancerAppelElem) { console.warn("Bouton '#btnLancerAppel' non trouvé dans updateCallUI."); return; }
 
-            if (calling) {
-                btnLancerAppelElem.innerHTML = "<i class='typcn typcn-phone ml-1'></i> إنهاء المكالمة";
-                btnLancerAppelElem.classList.remove('btn-success'); btnLancerAppelElem.classList.add('btn-danger');
-                if (appelActionsElem) { appelActionsElem.style.display = 'block'; /* ... animation ... */ }
-            } else {
-                btnLancerAppelElem.innerHTML = "<i class='typcn typcn-phone-outgoing ml-1'></i> بدء المكالمة";
-                btnLancerAppelElem.classList.remove('btn-danger'); btnLancerAppelElem.classList.add('btn-success');
-                if (appelActionsElem) { appelActionsElem.style.display = 'none'; /* ... animation ... */ }
-                if (notesAppelTextareaElem) notesAppelTextareaElem.value = '';
-                if (typeof $ !== 'undefined' && $('#appelScriptModal').modal) $('#appelScriptModal').modal('hide');
-            }
-            console.log("🔄 updateCallUI - UI mise à jour visuellement.");
-        }
-        
+    if (calling) {
+        btnLancerAppelElem.innerHTML = "<i class='typcn typcn-phone ml-1'></i> إنهاء المكالمة";
+        btnLancerAppelElem.classList.remove('btn-success'); btnLancerAppelElem.classList.add('btn-danger');
+        if (appelActionsElem) { appelActionsElem.style.display = 'block'; /* ... animation ... */ }
+        if (btnRefusAppelElem) { btnRefusAppelElem.style.display = 'inline-block'; } // Afficher le bouton Refus
+    } else {
+        btnLancerAppelElem.innerHTML = "<i class='typcn typcn-phone-outgoing ml-1'></i> بدء المكالمة";
+        btnLancerAppelElem.classList.remove('btn-danger'); btnLancerAppelElem.classList.add('btn-success');
+        if (appelActionsElem) { appelActionsElem.style.display = 'none'; /* ... animation ... */ }
+        if (notesAppelTextareaElem) notesAppelTextareaElem.value = '';
+        if (btnRefusAppelElem) { btnRefusAppelElem.style.display = 'none'; } // Cacher le bouton Refus
+        if (typeof $ !== 'undefined' && $('#appelScriptModal').modal) $('#appelScriptModal').modal('hide');
+    }
+    console.log("🔄 updateCallUI - UI mise à jour visuellement.");
+}
         async function checkInitialCallState() {
             console.log('🔍 checkInitialCallState - DÉBUT de la vérification.');
             const btnLancerAppelElem = document.getElementById('btnLancerAppel');
@@ -492,7 +521,51 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
             } catch (error) { console.error('   ❌ Erreur dans checkInitialCallState:', error); /* showFeedback Potentiel ici */ updateCallUI(false); }
             console.log('🔍 checkInitialCallState - FIN de la vérification.');
         }
+        const btnRefusAppel = document.getElementById('btnRefusAppel');
+if (btnRefusAppel) {
+    btnRefusAppel.addEventListener('click', async function (e) {
+        e.preventDefault();
+        const echantillonId = document.getElementById('btnLancerAppel').getAttribute('data-echantillon-id');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
+        if (!echantillonId) {
+            showFeedback('Erreur : L\'ID de l\'échantillon est manquant pour le refus.', 'danger');
+            return;
+        }
+
+        if (confirm('هل تريد فعلا تعديل حالة العينة إلى رفض ؟')) { // Confirmation avant de refuser
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refus...';
+
+            try {
+                const response = await fetch(`{{ url('/echantillons/${echantillonId}/refus') }}`, { // Définissez cette route dans votre web.php
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showFeedback(data.message || '👍 L\'échantillon a été refusé avec succès !');
+                    // Mettez à jour l'interface utilisateur pour refléter le statut 'refus' (par exemple, recharger la page ou mettre à jour le badge)
+                    window.location.reload(); // Moyen le plus simple de mettre à jour l'UI
+                } else {
+                    showFeedback(data.message || '❌ Échec du refus de l\'échantillon.', 'danger');
+                }
+            } catch (error) {
+                console.error('Erreur AJAX (refus) :', error);
+                showFeedback('⚠️ Une erreur s\'est produite lors de la tentative de refus de l\'échantillon.', 'danger');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="typcn typcn-user-delete ml-1"></i> Refus';
+            }
+        }
+    });
+}
 
         // --- NOUVELLE LOGIQUE POUR MODAL DE SÉLECTION DE NUMÉRO ---
         const selectNumeroModal = document.getElementById('selectNumeroModal');
@@ -834,8 +907,84 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
         if (btnVoirQuestionnaire) { btnVoirQuestionnaire.addEventListener('click', function(e) { e.preventDefault(); const questionnaireUrl = '{{-- URL de votre questionnaire --}}'; if(questionnaireUrl) window.open(questionnaireUrl, '_blank'); else showFeedback('Lien du questionnaire non configuré.', 'warning'); }); }
 
         const btnRelance = document.getElementById('btnRelance');
-        if (btnRelance) { btnRelance.addEventListener('click', async function (e) { /* ... Votre code AJAX pour relance ... */ });}
+        if (btnRelance) {
+    btnRelance.addEventListener('click', async function (e) {
+        e.preventDefault();
+        const echantillonId = this.getAttribute('data-echantillon-id');
+        const notesAppelTextarea = document.getElementById('notesAppel');
+        const commentaire = notesAppelTextarea ? notesAppelTextarea.value : '';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+        const causeSuiviModal = document.getElementById('causeSuiviModal');
 
+        if (!echantillonId) {
+            showFeedback('Erreur: L\'ID de l\'échantillon est manquant pour la relance.', 'danger');
+            return;
+        }
+
+        if (typeof $ !== 'undefined' && $(causeSuiviModal).modal) {
+            $(causeSuiviModal).modal('show'); // Show the modal instead of the prompt
+        } else {
+            showFeedback('Erreur: La modal de cause du suivi n\'a pas pu être affichée.', 'warning');
+            return;
+        }
+
+        const btnConfirmerCauseSuivi = document.getElementById('btnConfirmerCauseSuivi');
+        if (btnConfirmerCauseSuivi) {
+            btnConfirmerCauseSuivi.onclick = async () => {
+                const causeSuiviSelect = document.getElementById('causeSuiviSelect');
+                const causeSuivi = causeSuiviSelect ? causeSuiviSelect.value : '';
+
+                if (causeSuivi.trim() === '') {
+                    showFeedback('Veuillez sélectionner une cause du suivi.', 'warning');
+                    return;
+                }
+
+                if (typeof $ !== 'undefined' && $(causeSuiviModal).modal) {
+                    $(causeSuiviModal).modal('hide');
+                }
+
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+
+                try {
+                    const response = await fetch('{{ route('relances.store') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            echantillon_enquete_id: echantillonId,
+                            commentaire: commentaire,
+                            cause_suivi: causeSuivi
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showFeedback(data.message || '👍 Le suivi avec la cause a été enregistré avec succès !');
+                        if (notesAppelTextarea) {
+                            notesAppelTextarea.value = '';
+                        }
+                        if (typeof $ !== 'undefined' && $('#appelScriptModal').modal) {
+                            $('#appelScriptModal').modal('hide');
+                        }
+                    } else {
+                        showFeedback(data.message || '❌ Échec de l\'enregistrement du suivi.', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Erreur AJAX (relance) :', error);
+                    showFeedback('⚠️ Une erreur s\'est produite lors de la tentative d\'enregistrement du suivi.', 'danger');
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="typcn typcn-arrow-sync ml-1"></i> تسجيل ملاحظة / متابعة';
+                }
+            };
+        }
+    });
+}
         // Logique de beforeunload et navigationElements (si nécessaire)
         // window.addEventListener('beforeunload', function (event) { /* ... Votre code ... */ });
         // const navigationElements = document.querySelectorAll('...'); 

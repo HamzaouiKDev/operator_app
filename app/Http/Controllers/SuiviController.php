@@ -30,9 +30,10 @@ class SuiviController extends Controller
         }
 
         $validated = $request->validate([
-            'echantillon_enquete_id' => 'required|exists:echantillons_enquetes,id',
-            'commentaire'            => 'nullable|string|max:1000', // Le commentaire viendra des notes de l'appel
-        ]);
+    'echantillon_enquete_id' => 'required|exists:echantillons_enquetes,id',
+    'commentaire'             => 'nullable|string|max:1000',
+    'cause_suivi'             => 'required|string|max:255', // Ajoutez la validation pour cause_suivi
+]);
 
         // Vérification optionnelle : l'échantillon est-il assigné à cet utilisateur ?
         $echantillon = EchantillonEnquete::where('id', $validated['echantillon_enquete_id'])
@@ -44,14 +45,14 @@ class SuiviController extends Controller
         }
 
         try {
-            $suivi = Suivi::create([
-                'echantillon_enquete_id' => $validated['echantillon_enquete_id'],
-                'utilisateur_id'         => $user->id,
-                'date_suivi'             => now(), // Le suivi/rappel est enregistré à l'instant T
-                'commentaire'            => $validated['commentaire'] ?? 'متابعة مطلوبة', // Commentaire par défaut si non fourni
-                'resultat'               => 'relance', // Ou 'à_recontacter', 'rappel'. Choisissez une valeur cohérente.
-                                                       // Assurez-vous que cette valeur est acceptée par votre logique/BD.
-            ]);
+           $suivi = Suivi::create([
+    'echantillon_enquete_id' => $validated['echantillon_enquete_id'],
+    'utilisateur_id'          => $user->id,
+    'date_suivi'              => now(),
+    'commentaire'             => $validated['commentaire'] ?? 'متابعة مطلوبة',
+    'resultat'                => 'relance',
+    'cause_suivi'             => $validated['cause_suivi'], // Ajoutez cause_suivi ici
+]);
 
             Log::info("🔔 متابعة/تذكير مسجل للعينة #{$suivi->echantillon_enquete_id} بواسطة المستخدم #{$user->id}. رقم المتابعة: #{$suivi->id}");
 

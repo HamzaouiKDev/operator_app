@@ -7,10 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\EchantillonEnquete;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class RendezVousController extends Controller
 {
-       public function index()
+      public function index(Request $request) // Injectez Request ici
     {
         Log::info("[RendezVousController@index] Accès par Utilisateur ID: " . (Auth::id() ?? 'Non connecté'));
         if (!Auth::check()) {
@@ -18,34 +19,41 @@ class RendezVousController extends Controller
         }
 
         $user = Auth::user();
+        $searchTerm = $request->input('search_entreprise'); // Récupérer le terme de recherche
 
-        // Récupérer les rendez-vous de l'utilisateur POUR LESQUELS L'ÉCHANTILLON ASSOCIÉ
-        // EST TOUJOURS ATTRIBUÉ À CET UTILISATEUR.
-        $rendezVous = RendezVous::where('utilisateur_id', $user->id) // Le RDV est lié à l'utilisateur (créateur/responsable du RDV)
+        // Commencer la requête de base pour les rendez-vous
+        $rendezVousQuery = RendezVous::where('utilisateur_id', $user->id)
             ->whereHas('echantillonEnquete', function ($query) use ($user) {
-                // ET l'échantillon lié à ce RDV doit ACTUELLEMENT être assigné à cet utilisateur
-                $query->where('utilisateur_id', $user->id); 
-            })
-            ->with('echantillonEnquete.entreprise') // Charger les relations nécessaires
-            ->orderBy('heure_debut', 'desc')       // Ordonner par date de RDV (plus logique)
-            ->paginate(10);                        // Ou le nombre de votre choix
+                // L'échantillon lié à ce RDV doit ACTUELLEMENT être assigné à cet utilisateur
+                $query->where('utilisateur_id', $user->id);
+            });
 
-        Log::info("[RendezVousController@index] Nombre de RDV trouvés pour Utilisateur ID {$user->id} après filtrage d'assignation: " . $rendezVous->total());
+        // Si un terme de recherche est fourni, filtrer par nom d'entreprise
+        if ($searchTerm) {
+            $rendezVousQuery->whereHas('echantillonEnquete.entreprise', function ($query) use ($searchTerm) {
+                $query->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Exécuter la requête avec les relations, l'ordre et la pagination
+        $rendezVous = $rendezVousQuery
+            ->with('echantillonEnquete.entreprise') // Charger les relations nécessaires
+            ->orderBy('heure_debut', 'desc')        // Ordonner par date de RDV
+            ->paginate(10)                         // Paginer les résultats
+            ->appends(['search_entreprise' => $searchTerm]); // IMPORTANT: pour que la pagination conserve le filtre de recherche
+
+        Log::info("[RendezVousController@index] Nombre de RDV trouvés pour Utilisateur ID {$user->id} (recherche: '{$searchTerm}'): " . $rendezVous->total());
 
         // Regrouper les rendez-vous filtrés par entreprise pour l'affichage
         $rendezVousGroupedByEntreprise = $rendezVous->groupBy(function ($rdv) {
-            // S'assurer que echantillonEnquete et entreprise existent pour éviter les erreurs
             if ($rdv->echantillonEnquete && $rdv->echantillonEnquete->entreprise) {
                 return $rdv->echantillonEnquete->entreprise->id;
             }
-            // Fournir une clé unique pour les RDV sans entreprise ou échantillon (ne devrait pas arriver avec le whereHas)
-            return 'sans_entreprise_pour_rdv_' . $rdv->id; 
+            return 'sans_entreprise_pour_rdv_' . $rdv->id;
         });
         
-        // Ces statistiques sont les statistiques générales de l'utilisateur, comme sur la page d'accueil.
-        // Elles ne reflètent pas nécessairement les RDV filtrés sur cette page spécifique.
-        // C'est probablement acceptable, mais à noter.
-        $nombreEntreprisesRepondues = EchantillonEnquete::where('statut', 'termine') // ou 'répondu'
+        // Ces statistiques sont les statistiques générales de l'utilisateur.
+        $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu']) // Ajusté pour inclure 'répondu'
                                         ->where('utilisateur_id', $user->id)
                                         ->count();
         $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
@@ -56,9 +64,9 @@ class RendezVousController extends Controller
             'rendezVousGroupedByEntreprise', 
             'nombreEntreprisesRepondues', 
             'nombreEntreprisesAttribuees'
+            // Vous pouvez aussi passer $searchTerm à la vue si besoin: 'searchTerm' => $searchTerm
         ));
     }
-
     // ... Votre méthode showByEntreprise($rendezVousId) reste importante ...
     // Elle affiche les détails d'un RDV spécifique.
     // Si un utilisateur arrive sur cette page de détail via un lien (par ex. une notification, un ancien marque-page),
@@ -128,7 +136,7 @@ class RendezVousController extends Controller
     
     
 
-    public function store(Request $request, $id)
+     public function store(Request $request, $id)
     {
         // Vérifier si l'utilisateur est connecté
         if (!Auth::check()) {
@@ -158,5 +166,63 @@ class RendezVousController extends Controller
             // En cas d'erreur, retourner un message d'erreur
             return redirect()->back()->with('error', 'Une erreur est survenue lors de la création du rendez-vous.');
         }
+    }
+    public function aujourdhui(Request $request)
+    {
+        Log::info("[RendezVousController@aujourdhui] Accès par Utilisateur ID: " . (Auth::id() ?? 'Non connecté'));
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vous devez être connecté pour accéder à cette page.');
+        }
+
+        $user = Auth::user();
+        $searchTerm = $request->input('search_entreprise'); // Pour la recherche, si vous la conservez
+
+        $today = Carbon::today(); // Obtient la date d'aujourd'hui à minuit
+
+        // Commencer la requête de base
+        $rendezVousQuery = RendezVous::where('utilisateur_id', $user->id)
+            ->whereHas('echantillonEnquete', function ($query) use ($user) {
+                $query->where('utilisateur_id', $user->id);
+            })
+            ->whereDate('heure_debut', $today); // Filtre pour les RDV dont la date de début est aujourd'hui
+
+        // Appliquer le filtre de recherche par nom d'entreprise (si le terme est fourni)
+        if ($searchTerm) {
+            $rendezVousQuery->whereHas('echantillonEnquete.entreprise', function ($query) use ($searchTerm) {
+                $query->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        $rendezVous = $rendezVousQuery
+            ->with('echantillonEnquete.entreprise')
+            ->orderBy('heure_debut', 'asc') // Trier les RDV d'aujourd'hui par heure croissante
+            ->paginate(10)
+            ->appends($request->except('page')); // Conserve les paramètres de la requête (ex: search_entreprise) pour la pagination
+
+        Log::info("[RendezVousController@aujourdhui] Nombre de RDV pour aujourd'hui trouvés pour Utilisateur ID {$user->id} (recherche: '{$searchTerm}'): " . $rendezVous->total());
+
+        $rendezVousGroupedByEntreprise = $rendezVous->groupBy(function ($rdv) {
+            if ($rdv->echantillonEnquete && $rdv->echantillonEnquete->entreprise) {
+                return $rdv->echantillonEnquete->entreprise->id;
+            }
+            return 'sans_entreprise_pour_rdv_' . $rdv->id;
+        });
+        
+        // Statistiques générales (peuvent rester les mêmes ou être adaptées si besoin)
+        $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu'])
+                                        ->where('utilisateur_id', $user->id)
+                                        ->count();
+        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                        ->count();
+
+        // Utiliser une nouvelle vue ou la même avec un titre dynamique.
+        // Ici, nous allons supposer une nouvelle vue pour plus de clarté.
+        return view('aujourdhuiRDV', compact(
+            'rendezVous', 
+            'rendezVousGroupedByEntreprise', 
+            'nombreEntreprisesRepondues', 
+            'nombreEntreprisesAttribuees'
+            // Vous pouvez aussi passer $searchTerm si la vue 'aujourdhuiRDV' l'utilise
+        ));
     }
 }

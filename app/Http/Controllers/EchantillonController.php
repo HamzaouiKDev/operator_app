@@ -530,4 +530,26 @@ class EchantillonController extends Controller
         Log::info("[disponibles] Nombre d'échantillons disponibles: {$disponibles} pour Utilisateur #{$user->id}.");
         return response()->json(['success' => true, 'disponibles' => $disponibles]);
     }
+    public function markAsRefused(Request $request, EchantillonEnquete $echantillon)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Utilisateur non authentifié.'], 401);
+        }
+
+        // Optionnel : Vérifier si l'échantillon appartient à l'utilisateur
+        if ($echantillon->utilisateur_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'Cet échantillon n\'est pas assigné à cet utilisateur.'], 403);
+        }
+
+        if ($echantillon->statut === 'refus') {
+            return response()->json(['success' => false, 'message' => 'Cet échantillon est déjà marqué comme refusé.'], 400);
+        }
+
+        $echantillon->statut = 'refus';
+        $echantillon->save();
+
+        return response()->json(['success' => true, 'message' => 'L\'échantillon a été marqué comme refusé avec succès.']);
+    }
 }
