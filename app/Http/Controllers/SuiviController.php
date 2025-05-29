@@ -2,22 +2,68 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Suivi;
 use Illuminate\Http\Request;
+use App\Models\Suivi; // ✅ Assurez-vous que ce chemin est correct
+use App\Models\EchantillonEnquete; // ✅ Assurez-vous que ce chemin est correct
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+// Si vous avez déjà une méthode 'store', vous pouvez ajouter 'creerRappel' à la suite.
 
 class SuiviController extends Controller
 {
-    public function store(Request $request)
+    // Votre méthode store existante (si elle existe)
+    // public function store(Request $request)
+    // {
+    //     // Votre logique existante pour la route relance.store
+    // }
+
+    /**
+     * Crée un suivi de type "rappel" ou "relance" pour un échantillon.
+     */
+    public function creerRappel(Request $request) // ✅ C'EST LA MÉTHODE À AJOUTER/VÉRIFIER
     {
-        $suivi = Suivi::create([
-            'echantillon_enquete_id' => $request->echantillon_enquete_id,
-            'utilisateur_id' => $request->utilisateur_id,
-            'date_suivi' => now(),
-            'commentaire' => 'Relance effectuée',
-            'resultat' => 'en_attente',
+        $user = Auth::user();
+
+        // L'utilisateur doit être authentifié (normalement géré par le middleware de la route)
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Utilisateur non authentifié.'], 401);
+        }
+
+        $validated = $request->validate([
+            'echantillon_enquete_id' => 'required|exists:echantillons_enquetes,id',
+            'commentaire'            => 'nullable|string|max:1000', // Le commentaire viendra des notes de l'appel
         ]);
 
-        return response()->json(['message' => 'Relance enregistrée avec succès']);
+        // Vérification optionnelle : l'échantillon est-il assigné à cet utilisateur ?
+        $echantillon = EchantillonEnquete::where('id', $validated['echantillon_enquete_id'])
+                                        ->where('utilisateur_id', $user->id)
+                                        ->first();
+
+        if (!$echantillon) {
+            return response()->json(['success' => false, 'message' => 'العينة غير موجودة أو غير مخصصة لك.'], 404);
+        }
+
+        try {
+            $suivi = Suivi::create([
+                'echantillon_enquete_id' => $validated['echantillon_enquete_id'],
+                'utilisateur_id'         => $user->id,
+                'date_suivi'             => now(), // Le suivi/rappel est enregistré à l'instant T
+                'commentaire'            => $validated['commentaire'] ?? 'متابعة مطلوبة', // Commentaire par défaut si non fourni
+                'resultat'               => 'relance', // Ou 'à_recontacter', 'rappel'. Choisissez une valeur cohérente.
+                                                       // Assurez-vous que cette valeur est acceptée par votre logique/BD.
+            ]);
+
+            Log::info("🔔 متابعة/تذكير مسجل للعينة #{$suivi->echantillon_enquete_id} بواسطة المستخدم #{$user->id}. رقم المتابعة: #{$suivi->id}");
+
+            return response()->json([
+                'success' => true,
+                'message' => '👍 تم تسجيل المتابعة بنجاح!', // Message de succès en arabe
+                'suivi'   => $suivi // Optionnel : retourner l'objet suivi créé
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("❌ خطأ أثناء تسجيل المتابعة/التذكير: " . $e->getMessage() . "\n" . $e->getTraceAsString()); // Ajout du stack trace pour plus de détails
+            return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء تسجيل المتابعة.'], 500);
+        }
     }
 }
-

@@ -4,77 +4,129 @@ namespace App\Http\Controllers;
 
 use App\Models\RendezVous;
 use Illuminate\Http\Request;
+use App\Models\EchantillonEnquete;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class RendezVousController extends Controller
 {
-   public function index()
-{
-    // Vérifier si l'utilisateur est authentifié
-    if (!Auth::check()) {
-        return redirect()->route('login')->with('error', 'Vous devez être connecté pour accéder à cette page.');
+       public function index()
+    {
+        Log::info("[RendezVousController@index] Accès par Utilisateur ID: " . (Auth::id() ?? 'Non connecté'));
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vous devez être connecté pour accéder à cette page.');
+        }
+
+        $user = Auth::user();
+
+        // Récupérer les rendez-vous de l'utilisateur POUR LESQUELS L'ÉCHANTILLON ASSOCIÉ
+        // EST TOUJOURS ATTRIBUÉ À CET UTILISATEUR.
+        $rendezVous = RendezVous::where('utilisateur_id', $user->id) // Le RDV est lié à l'utilisateur (créateur/responsable du RDV)
+            ->whereHas('echantillonEnquete', function ($query) use ($user) {
+                // ET l'échantillon lié à ce RDV doit ACTUELLEMENT être assigné à cet utilisateur
+                $query->where('utilisateur_id', $user->id); 
+            })
+            ->with('echantillonEnquete.entreprise') // Charger les relations nécessaires
+            ->orderBy('heure_debut', 'desc')       // Ordonner par date de RDV (plus logique)
+            ->paginate(10);                        // Ou le nombre de votre choix
+
+        Log::info("[RendezVousController@index] Nombre de RDV trouvés pour Utilisateur ID {$user->id} après filtrage d'assignation: " . $rendezVous->total());
+
+        // Regrouper les rendez-vous filtrés par entreprise pour l'affichage
+        $rendezVousGroupedByEntreprise = $rendezVous->groupBy(function ($rdv) {
+            // S'assurer que echantillonEnquete et entreprise existent pour éviter les erreurs
+            if ($rdv->echantillonEnquete && $rdv->echantillonEnquete->entreprise) {
+                return $rdv->echantillonEnquete->entreprise->id;
+            }
+            // Fournir une clé unique pour les RDV sans entreprise ou échantillon (ne devrait pas arriver avec le whereHas)
+            return 'sans_entreprise_pour_rdv_' . $rdv->id; 
+        });
+        
+        // Ces statistiques sont les statistiques générales de l'utilisateur, comme sur la page d'accueil.
+        // Elles ne reflètent pas nécessairement les RDV filtrés sur cette page spécifique.
+        // C'est probablement acceptable, mais à noter.
+        $nombreEntreprisesRepondues = EchantillonEnquete::where('statut', 'termine') // ou 'répondu'
+                                        ->where('utilisateur_id', $user->id)
+                                        ->count();
+        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                        ->count();
+
+        return view('indexRDV', compact(
+            'rendezVous', 
+            'rendezVousGroupedByEntreprise', 
+            'nombreEntreprisesRepondues', 
+            'nombreEntreprisesAttribuees'
+        ));
     }
 
-    // Récupérer l'utilisateur connecté
-    $user = Auth::user();
-
-    // Récupérer les rendez-vous de l'utilisateur avec pagination
-    $rendezVous = RendezVous::where('utilisateur_id', $user->id)
-        ->with('echantillonEnquete.entreprise')
-        ->orderBy('echantillon_enquete_id')
-        ->paginate(10);
-
-    // Regrouper les rendez-vous par entreprise
-    $rendezVousGroupedByEntreprise = $rendezVous->groupBy(function ($rdv) {
-        return $rdv->echantillonEnquete->entreprise_id ?? 'sans_entreprise';
-    });
-
-    // Ajouter des statistiques ou d'autres données si nécessaire
-    $nombreEntreprisesRepondues = 0; // Remplacer par la logique réelle si nécessaire
-    $nombreEntreprisesAttribuees = 0; // Remplacer par la logique réelle si nécessaire
-
-    // Retourner la vue avec la liste des rendez-vous paginés
-    return view('indexRDV', compact('rendezVous', 'rendezVousGroupedByEntreprise', 'nombreEntreprisesRepondues', 'nombreEntreprisesAttribuees'));
-}
+    // ... Votre méthode showByEntreprise($rendezVousId) reste importante ...
+    // Elle affiche les détails d'un RDV spécifique.
+    // Si un utilisateur arrive sur cette page de détail via un lien (par ex. une notification, un ancien marque-page),
+    // la logique pour désactiver/cacher le bouton "Lancer appel" (avec la variable $peutLancerAppel)
+    // que nous avons discutée précédemment reste pertinente pour cette page de détail.
     public function showByEntreprise($rendezVousId)
-{
-    // Vérifier si l'utilisateur est authentifié
-    if (!Auth::check()) {
-        return redirect()->route('login')->with('error', 'Vous devez être connecté pour accéder à cette page.');
+    {
+        Log::info("[RendezVousController@showByEntreprise] Accès pour RendezVous ID: {$rendezVousId} par Utilisateur ID: " . (Auth::id() ?? 'Non connecté'));
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vous devez être connecté pour accéder à cette page.');
+        }
+        $user = Auth::user();
+
+        $selectedRdv = RendezVous::with([
+                'echantillonEnquete.entreprise.telephones',
+                'echantillonEnquete.entreprise.contacts',
+                'echantillonEnquete.entreprise.emails'
+            ])
+            ->where('id', $rendezVousId) // On cherche le RDV spécifique par son ID
+            // Optionnel: S'assurer que le RDV est lié à l'utilisateur si c'est une règle métier.
+            // ->where('utilisateur_id', $user->id) 
+            ->findOrFail($rendezVousId); // findOrFail pour lever une 404 si le RDV n'existe pas
+
+        if (!$selectedRdv->echantillonEnquete || !$selectedRdv->echantillonEnquete->entreprise) {
+            Log::error("[RendezVousController@showByEntreprise] Échantillon ou entreprise manquante pour RDV ID: {$rendezVousId}");
+            return redirect()->route('rendezvous.index')->with('error', 'Aucune entreprise ou échantillon valide associé à ce rendez-vous.');
+        }
+
+        $echantillon = $selectedRdv->echantillonEnquete;
+        $entreprise = $echantillon->entreprise;
+
+        $peutLancerAppel = ($echantillon->utilisateur_id === $user->id);
+
+        // Récupérer tous les rendez-vous de l'utilisateur liés à CETTE MÊME ENTREPRISE
+        // J'ai renommé la variable $rendezVousDeLEntreprise en $rendezVous pour correspondre à ce que compact() attend
+        // et ce que la vue 'index.blade.php' attend probablement pour la pagination.
+        $rendezVous = RendezVous::where('utilisateur_id', $user->id) // RDVs de l'utilisateur connecté
+            ->whereHas('echantillonEnquete', function ($query) use ($entreprise) {
+                $query->where('entreprise_id', $entreprise->id); // Pour cette entreprise spécifique
+            })
+            ->with('echantillonEnquete') 
+            ->orderBy('heure_debut', 'desc')
+            ->paginate(5); // Un nombre plus petit pour une page de détail
+
+        // $rendezVousGrouped est utilisé pour grouper les RDVs affichés sur la page de détail
+        $rendezVousGrouped = $rendezVous->groupBy('echantillon_enquete_id');
+        Log::info("[RendezVousController@showByEntreprise] Nombre de RDV pour l'entreprise {$entreprise->nom_entreprise} (ID: {$entreprise->id}) pour Utilisateur #{$user->id}: " . $rendezVous->total());
+
+
+        // Statistiques générales de l'utilisateur (les mêmes que sur la page d'accueil)
+        $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu'])
+                                        ->where('utilisateur_id', $user->id)
+                                        ->count();
+        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                        ->count();
+        
+        return view('index', compact( // La vue 'index.blade.php' est utilisée pour afficher le détail
+            'echantillon',           // L'échantillon principal cliqué (via le RDV)
+            'entreprise',            // L'entreprise de cet échantillon
+            'rendezVous',            // ✅ La variable est maintenant correctement nommée '$rendezVous'
+            'rendezVousGrouped',     // Les RDV pour cette entreprise, groupés
+            'nombreEntreprisesRepondues',
+            'nombreEntreprisesAttribuees',
+            'peutLancerAppel'        // Pour conditionner le bouton "Lancer Appel"
+        ));
     }
-
-    // Récupérer le rendez-vous sélectionné
-    $selectedRdv = RendezVous::with('echantillonEnquete.entreprise')
-        ->where('utilisateur_id', Auth::user()->id)
-        ->findOrFail($rendezVousId);
-
-    // Vérifier si une entreprise est associée
-    if (!$selectedRdv->echantillonEnquete || !$selectedRdv->echantillonEnquete->entreprise) {
-        return redirect()->back()->with('error', 'Aucune entreprise associée à ce rendez-vous.');
-    }
-
-    $entreprise = $selectedRdv->echantillonEnquete->entreprise;
-    $echantillon = $selectedRdv->echantillonEnquete;
-
-    // Récupérer tous les rendez-vous de l'utilisateur liés à cette entreprise via les échantillons
-    $rendezVous = RendezVous::where('utilisateur_id', Auth::user()->id)
-        ->whereHas('echantillonEnquete', function ($query) use ($entreprise) {
-            $query->where('entreprise_id', $entreprise->id);
-        })
-        ->with('echantillonEnquete')
-        ->orderBy('echantillon_enquete_id')
-        ->paginate(10);
-
-    // Regrouper par échantillon pour l'affichage détaillé
-    $rendezVousGrouped = $rendezVous->groupBy('echantillon_enquete_id');
-
-    // Ajouter des statistiques ou d'autres données si nécessaire
-    $nombreEntreprisesRepondues = 0; // Remplacer par la logique réelle si nécessaire
-    $nombreEntreprisesAttribuees = 0; // Remplacer par la logique réelle si nécessaire
-
-    // Retourner la vue index avec les données
-    return view('index', compact('rendezVous', 'rendezVousGrouped', 'entreprise', 'echantillon', 'nombreEntreprisesRepondues', 'nombreEntreprisesAttribuees'));
-}
+    
+    
 
     public function store(Request $request, $id)
     {

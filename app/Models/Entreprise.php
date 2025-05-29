@@ -1,34 +1,36 @@
 <?php
+// app/Models/Entreprise.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Entreprise extends Model
 {
-    protected $fillable = [
-        'code_national', 'nom_entreprise', 'libelle_activite', 'gouvernorat',
-        'numero_rue', 'nom_rue', 'ville', 'statut', 'adresse_cnss', 'localite_cnss',
-    ];
+    use HasFactory;
 
+    // ... vos attributs existants
+
+    // Relations
     public function telephones()
     {
-        return $this->hasMany(TelephoneEntreprise::class);
-    }
-
-    public function emails()
-    {
-        return $this->hasMany(EmailEntreprise::class);
+        return $this->hasMany(TelephoneEntreprise::class, 'entreprise_id');
     }
 
     public function contacts()
     {
-        return $this->hasMany(ContactEntreprise::class);
+        return $this->hasMany(ContactEntreprise::class, 'entreprise_id');
     }
 
-     public function echantillonEnquetes()
+    // **RELATION AVEC EmailEntreprise**
+    public function emails()
+    {
+        return $this->hasMany(EmailEntreprise::class, 'entreprise_id'); // ✅ CORRECT
+    }
+
+    public function echantillons()
     {
         return $this->hasMany(EchantillonEnquete::class, 'entreprise_id');
     }
 }
-?>
