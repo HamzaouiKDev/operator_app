@@ -8,7 +8,6 @@ use App\Models\Suivi;
 use App\Models\Enquete;
 use App\Models\Entreprise;
 use App\Models\RendezVous;
-use App\Models\Utilisateur;
 use Faker\Factory as Faker;
 use App\Models\EmailEntreprise;
 use Illuminate\Database\Seeder;
@@ -61,35 +60,42 @@ class DatabaseSeeder extends Seeder
             $utilisateurs->push($utilisateur);
         }
 
-        // 2. Créer 5 enquêtes
-        $enquetes = collect();
-        for ($i = 0; $i < 5; $i++) {
-            $enquete = Enquete::create([
-                'titre' => $faker->sentence(4),
-                'description' => $faker->paragraph,
-                'date_debut' => $faker->dateTimeBetween('-1 month', 'now'),
-                'date_fin' => $faker->dateTimeBetween('now', '+1 month'),
-                'statut' => $faker->randomElement(['en_cours', 'terminee', 'planifiee']),
-            ]);
-            $enquetes->push($enquete);
+        // 2. Créer une seule enquête
+        $enquete = Enquete::create([
+            'titre' => $faker->sentence(4),
+            'description' => $faker->paragraph,
+            'date_debut' => $faker->dateTimeBetween('-1 month', 'now'),
+            'date_fin' => $faker->dateTimeBetween('now', '+1 month'),
+            'statut' => $faker->randomElement(['en_cours', 'terminee', 'planifiee']),
+        ]);
 
-            // Créer 1 à 3 questionnaires par enquête
-            for ($j = 0; $j < rand(1, 3); $j++) {
-                QuestionnaireEnquete::create([
-                    'enquete_id' => $enquete->id,
-                    'titre' => $faker->sentence(3),
-                    'description' => $faker->paragraph,
-                ]);
-            }
+        // Créer 1 à 3 questionnaires pour cette enquête
+        for ($j = 0; $j < rand(1, 3); $j++) {
+            QuestionnaireEnquete::create([
+                'enquete_id' => $enquete->id,
+                'titre' => $faker->sentence(3),
+                'description' => $faker->paragraph,
+            ]);
         }
 
-        // 3. Créer 30 entreprises
+        // Liste pour stocker les noms d'entreprise uniques
+        $nomsEntreprises = collect();
+
+        // 3. Créer 30 entreprises avec des noms uniques
         for ($i = 0; $i < 30; $i++) {
+            // Générer un nom d'entreprise unique
+            do {
+                $nomEntreprise = $faker->company;
+            } while ($nomsEntreprises->contains($nomEntreprise));
+
+            // Ajouter le nom à la liste pour éviter les doublons
+            $nomsEntreprises->push($nomEntreprise);
+
             $entreprise = Entreprise::create([
                 'code_national' => $faker->unique()->numerify('NAT-######'),
-                'nom_entreprise' => $faker->company,
+                'nom_entreprise' => $nomEntreprise,
                 'libelle_activite' => $faker->randomElement($libellesActivite),
-                'gouvernorat' => $faker->randomElement($gouvernorats), // Remplacement de state
+                'gouvernorat' => $faker->randomElement($gouvernorats),
                 'numero_rue' => $faker->buildingNumber,
                 'nom_rue' => $faker->streetName,
                 'ville' => $faker->city,
@@ -112,7 +118,7 @@ class DatabaseSeeder extends Seeder
             for ($j = 0; $j < rand(1, 2); $j++) {
                 EmailEntreprise::create([
                     'entreprise_id' => $entreprise->id,
-                    'email' => $faker->companyEmail,
+                    'email' => $faker->unique()->companyEmail,
                     'source' => $faker->optional()->word,
                     'est_primaire' => $j === 0,
                 ]);
@@ -131,51 +137,49 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // 7. Créer 2 à 4 échantillons d'enquêtes par entreprise
-            for ($j = 0; $j < rand(2, 4); $j++) {
-                $echantillon = EchantillonEnquete::create([
-                    'entreprise_id' => $entreprise->id,
-                    'enquete_id' => $enquetes->random()->id,
-                    'statut' => $faker->randomElement($statutsEchantillons),
-                    'priorite' => $faker->randomElement(['basse', 'moyenne', 'haute']),
+            // 7. Créer un seul échantillon d'enquête par entreprise (lié à la seule enquête)
+            $echantillon = EchantillonEnquete::create([
+                'entreprise_id' => $entreprise->id,
+                'enquete_id' => $enquete->id,
+                'statut' => $faker->randomElement($statutsEchantillons),
+                'priorite' => $faker->randomElement(['basse', 'moyenne', 'haute']),
+            ]);
+
+            // 8. Créer 1 à 3 rendez-vous par échantillon
+            for ($k = 0; $k < rand(1, 3); $k++) {
+                $heureDebut = $faker->dateTimeBetween('now', '+1 week');
+                RendezVous::create([
+                    'echantillon_enquete_id' => $echantillon->id,
+                    'utilisateur_id' => $utilisateurs->random()->id,
+                    'heure_debut' => $heureDebut,
+                    'heure_fin' => $faker->dateTimeBetween($heureDebut, $heureDebut->format('Y-m-d H:i:s').' +2 hours'),
+                    'statut' => $faker->randomElement(['planifie', 'confirme', 'annule']),
+                    'notes' => $faker->optional()->paragraph,
                 ]);
+            }
 
-                // 8. Créer 1 à 3 rendez-vous par échantillon
-                for ($k = 0; $k < rand(1, 3); $k++) {
-                    $heureDebut = $faker->dateTimeBetween('now', '+1 week');
-                    RendezVous::create([
-                        'echantillon_enquete_id' => $echantillon->id,
-                        'utilisateur_id' => $utilisateurs->random()->id,
-                        'heure_debut' => $heureDebut,
-                        'heure_fin' => $faker->dateTimeBetween($heureDebut, $heureDebut->format('Y-m-d H:i:s').' +2 hours'),
-                        'statut' => $faker->randomElement(['planifie', 'confirme', 'annule']),
-                        'notes' => $faker->optional()->paragraph,
-                    ]);
-                }
+            // 9. Créer 1 à 3 suivis par échantillon
+            for ($k = 0; $k < rand(1, 3); $k++) {
+                Suivi::create([
+                    'echantillon_enquete_id' => $echantillon->id,
+                    'utilisateur_id' => $utilisateurs->random()->id,
+                    'date_suivi' => $faker->dateTimeBetween('-1 month', 'now'),
+                    'commentaire' => $faker->optional()->paragraph,
+                    'resultat' => $faker->randomElement(['positif', 'negatif', 'en_attente']),
+                ]);
+            }
 
-                // 9. Créer 1 à 3 suivis par échantillon
-                for ($k = 0; $k < rand(1, 3); $k++) {
-                    Suivi::create([
-                        'echantillon_enquete_id' => $echantillon->id,
-                        'utilisateur_id' => $utilisateurs->random()->id,
-                        'date_suivi' => $faker->dateTimeBetween('-1 month', 'now'),
-                        'commentaire' => $faker->optional()->paragraph,
-                        'resultat' => $faker->randomElement(['positif', 'negatif', 'en_attente']),
-                    ]);
-                }
-
-                // 10. Créer 1 à 3 appels par échantillon
-                for ($k = 0; $k < rand(1, 3); $k++) {
-                    $heureDebut = $faker->dateTimeBetween('-1 month', 'now');
-                    Appel::create([
-                        'echantillon_enquete_id' => $echantillon->id,
-                        'utilisateur_id' => $utilisateurs->random()->id,
-                        'heure_debut' => $heureDebut,
-                        'heure_fin' => $faker->dateTimeBetween($heureDebut, $heureDebut->format('Y-m-d H:i:s').' +1 hour'),
-                        'statut' => $faker->randomElement(['termine', 'en_cours', 'echec']),
-                        'notes' => $faker->optional()->paragraph,
-                    ]);
-                }
+            // 10. Créer 1 à 3 appels par échantillon
+            for ($k = 0; $k < rand(1, 3); $k++) {
+                $heureDebut = $faker->dateTimeBetween('-1 month', 'now');
+                Appel::create([
+                    'echantillon_enquete_id' => $echantillon->id,
+                    'utilisateur_id' => $utilisateurs->random()->id,
+                    'heure_debut' => $heureDebut,
+                    'heure_fin' => $faker->dateTimeBetween($heureDebut, $heureDebut->format('Y-m-d H:i:s').' +1 hour'),
+                    'statut' => $faker->randomElement(['termine', 'en_cours', 'echec']),
+                    'notes' => $faker->optional()->paragraph,
+                ]);
             }
         }
     }

@@ -26,7 +26,7 @@ class Entreprise extends Model
         return $this->hasMany(ContactEntreprise::class);
     }
 
-    public function echantillons()
+     public function echantillonEnquetes()
     {
         return $this->hasMany(EchantillonEnquete::class, 'entreprise_id');
     }

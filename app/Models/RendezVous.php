@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 class RendezVous extends Model
 {
+    use HasFactory;
+
     protected $table = 'rendez_vous';
 
     protected $fillable = [
@@ -18,18 +20,23 @@ class RendezVous extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'heure_debut' => 'datetime',
-        'heure_fin' => 'datetime',
+    protected $dates = [
+        'heure_debut',
+        'heure_fin',
+        'created_at',
+        'updated_at',
     ];
+     
 
+    // Relation avec EchantillonEnquete
     public function echantillonEnquete()
     {
-        return $this->belongsTo(EchantillonEnquete::class);
+        return $this->belongsTo(EchantillonEnquete::class, 'echantillon_enquete_id');
     }
 
+    // Relation avec User
     public function utilisateur()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'utilisateur_id');
     }
 }

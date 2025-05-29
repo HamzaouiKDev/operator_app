@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 
 class EchantillonEnquete extends Model
@@ -19,4 +20,6 @@ class EchantillonEnquete extends Model
     {
         return $this->belongsTo(Entreprise::class);
     }
+    
+   
 }
