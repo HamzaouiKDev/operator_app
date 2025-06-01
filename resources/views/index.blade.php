@@ -1,13 +1,13 @@
 @extends('layouts.master')
 
 @section('css')
-    {{-- Styles CSS existants et ajoutés --}}
     <link href="{{URL::asset('assets/plugins/owl-carousel/owl.carousel.css')}}" rel="stylesheet" />
     <link href="{{URL::asset('assets/plugins/jqvmap/jqvmap.min.css')}}" rel="stylesheet">
     <link href="{{URL::asset('assets/plugins/iconfonts/plugin.css')}}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     
     <style>
+        /* Styles existants */
         #appelActions { transition: all 0.3s ease-in-out; }
         #appelActions .btn { transition: all 0.2s ease; }
         #appelActions .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
@@ -25,12 +25,29 @@
             border-color: #007bff !important; 
             font-weight: bold;
         }
-        /* Classe pour les badges d'état des numéros dans la modale */
         .numero-badge-etat { 
             margin-left: 8px; 
             font-size: 0.8em;
             padding: 0.3em 0.6em;
             vertical-align: middle;
+        }
+
+        /* Nouveaux styles pour la modale Ajouter Suivi */
+        .modal-header-custom-suivi {
+            background-color: #3498db;
+            color: white;
+            border-bottom: 2px solid #2980b9;
+        }
+        .btn-submit-custom-suivi {
+            background-color: #3498db;
+            border-color: #2980b9;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-submit-custom-suivi:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
     </style>
 @endsection
@@ -94,15 +111,25 @@
                                     </form>
                                     @if($peutLancerAppel ?? false)
                                         <button id="btnLancerAppel" class="btn btn-success btn-lg mb-2" style="width: 100%;" data-echantillon-id="{{ $echantillon->id }}"><i class="typcn typcn-phone-outgoing ml-1"></i> بدء المكالمة</button>
-                                        <div id="appelActions" style="display: none; width: 100%;">
-                                            <div class="btn-group mb-2" role="group" style="width: 100%;">
-                                                <button id="btnAjouterRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c; flex-grow: 1;"><i class="typcn typcn-calendar ml-1"></i> إضافة موعد</button>
-                                                <button id="btnVoirScript" class="btn btn-warning" style="background-color: #f39c12; border-color: #f39c12; flex-grow: 1;"><i class="typcn typcn-document-text ml-1"></i> عرض نص المكالمة</button>
-                                                <button id="btnVoirQuestionnaire" class="btn btn-secondary" style="background-color: #95a5a6; border-color: #95a5a6; color:white; flex-grow: 1;"><i class="typcn typcn-document-add ml-1"></i> الاستبيان</button>
-                                                <button id="btnRefusAppel" class="btn btn-danger" style="display: none; flex-grow: 1;"><i class="typcn typcn-user-delete ml-1"></i> رفض</button> 
-                                            </div>
-                                            <button id="btnRelance" class="btn btn-outline-warning btn-block" data-echantillon-id="{{ $echantillon->id }}"><i class="typcn typcn-arrow-sync ml-1"></i> إعادة الإتصال</button>
-                                        </div>
+                                        {{-- ... à l'intérieur de @if($peutLancerAppel ?? false) ... --}}
+                                <div id="appelActions" style="display: none; width: 100%;">
+                                    <div class="btn-group mb-2" role="group" style="width: 100%;">
+                                        <button id="btnAjouterRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c; flex-grow: 1;"><i class="typcn typcn-calendar ml-1"></i> إضافة موعد</button>
+                                        <button id="btnVoirScript" class="btn btn-warning" style="background-color: #f39c12; border-color: #f39c12; flex-grow: 1;"><i class="typcn typcn-document-text ml-1"></i> عرض نص المكالمة</button>
+                                        <button id="btnVoirQuestionnaire" class="btn btn-secondary" style="background-color: #95a5a6; border-color: #95a5a6; color:white; flex-grow: 1;"><i class="typcn typcn-document-add ml-1"></i> الاستبيان</button>
+                                        <button id="btnRefusAppel" class="btn btn-danger" style="display: none; flex-grow: 1;"><i class="typcn typcn-user-delete ml-1"></i> رفض</button> 
+                                    </div>
+
+                                    {{-- ✅ NOUVEAU BOUTON "AJOUTER SUIVI" (remplace l'ancien #btnRelance ou s'ajoute) --}}
+                                    @if(isset($echantillon) && $echantillon->id) {{-- S'assurer que $echantillon est disponible --}}
+                                        <button id="btnOuvrirModalAjoutSuivi" type="button" class="btn btn-outline-primary btn-block" 
+                                                data-echantillon-id="{{ $echantillon->id }}">
+                                            <i class="fas fa-history" style="margin-left: 8px;"></i> إضافة متابعة / إعادة اتصال
+                                        </button>
+                                    @endif
+                                    {{-- FIN NOUVEAU BOUTON --}}
+                                </div>
+                                {{-- ... --}}
                                     @else
                                         <p class="text-muted mt-2">لا يمكن بدء المكالمة لهذه العينة.</p>
                                     @endif
@@ -184,11 +211,11 @@
                                 <p class="text-muted">لا توجد عناوين بريد إلكتروني مسجلة.</p>
                             @else
                                 <div class="table-responsive">
-                                     <table class="table table-striped mg-b-0 text-md-nowrap"><thead><tr><th class="tx-14 fw-bold">البريد</th><th class="tx-14 fw-bold">المصدر</th><th class="tx-14 fw-bold">أساسي</th></tr></thead><tbody>
-                                    @foreach($echantillon->entreprise->emails as $email)
-                                        <tr><td><strong style="font-size: 12px;">{{ $email->email }}</strong></td><td>{{ $email->source ?? 'غير محدد' }}</td><td>@if($email->est_primaire)<span class="badge badge-success">نعم</span>@else<span class="badge badge-secondary">لا</span>@endif</td></tr>
-                                    @endforeach
-                                    </tbody></table>
+                                        <table class="table table-striped mg-b-0 text-md-nowrap"><thead><tr><th class="tx-14 fw-bold">البريد</th><th class="tx-14 fw-bold">المصدر</th><th class="tx-14 fw-bold">أساسي</th></tr></thead><tbody>
+                                        @foreach($echantillon->entreprise->emails as $email)
+                                            <tr><td><strong style="font-size: 12px;">{{ $email->email }}</strong></td><td>{{ $email->source ?? 'غير محدد' }}</td><td>@if($email->est_primaire)<span class="badge badge-success">نعم</span>@else<span class="badge badge-secondary">لا</span>@endif</td></tr>
+                                        @endforeach
+                                        </tbody></table>
                                 </div>
                             @endif
                             <button id="btnEmailModal" class="btn btn-outline-danger btn-sm mg-t-10"><i class="typcn typcn-mail ml-1"></i> إضافة بريد إلكتروني</button>
@@ -261,36 +288,115 @@
         </div>
 
         {{-- Autres Modales (RendezVous, Telephone, Email, Contact, Script Appel) --}}
-        <div class="modal fade" id="causeSuiviModal" tabindex="-1" role="dialog" aria-labelledby="causeSuiviModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+@if(isset($echantillon)) {{-- La modale est contextuelle à un échantillon --}}
+<div class="modal fade" id="ajouterSuiviModal" tabindex="-1" role="dialog" aria-labelledby="ajouterSuiviModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #f39c12; color: white;">
-                <h5 class="modal-title" id="causeSuiviModalLabel">Choisir la cause du suivi</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
+            <div class="modal-header modal-header-custom-suivi">
+                <h5 class="modal-title" id="ajouterSuiviModalLabel"><i class="fas fa-history"></i> إضافة متابعة للعينة #{{ $echantillon->id }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body text-right">
-                <div class="form-group">
-                    <label for="causeSuiviSelect">سبب إعادة الإتصال<span class="text-danger">*</span></label>
-                    <select class="form-control" id="causeSuiviSelect" name="cause_suivi" required>
-                        <option value="">إختر أحد الأسباب</option>
-                        <option value="Personne inappropriée">ليس هناك رد</option>
-                        <option value="Pas de réponse">لم أجد الشخص المناسب للإجابة </option>
-                        <option value="Autres causes">أسباب أخرى</option>
-                    </select>
-                </div>
+                <form id="formAjouterNouveauSuivi" action="{{ route('suivis.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" id="suivi_echantillon_id_modal_input_js" name="echantillon_enquete_id" value="{{ $echantillon->id }}">
+                    <div class="form-group">
+                        <label for="cause_suivi_modal_input">سبب المتابعة <span class="text-danger">*</span></label>
+                        <select class="form-control" id="cause_suivi_modal_input" name="cause_suivi" required>
+                            <option value="">اختر سبب المتابعة</option>
+                            <option value="Réponse absente">ليس هناك رد</option>
+                            <option value="Personne non adéquate">لم أجد الشخص المناسب للإجابة</option>
+                            <option value="Rappel demandé par client">طلب الزبون إعادة الاتصال</option>
+                            <option value="Information manquante">معلومات ناقصة</option>
+                            <option value="Autre">أسباب أخرى</option>
+                        </select>
+                        <div class="invalid-feedback" id="cause_suivi_modal_error_msg">يرجى اختيار سبب المتابعة.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="note_suivi_modal_input">ملاحظات (اختياري)</label>
+                        <textarea class="form-control" id="note_suivi_modal_input" name="note" rows="4" placeholder="أدخل ملاحظاتك هنا..."></textarea>
+                        <div class="invalid-feedback" id="note_suivi_modal_error_msg"></div>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmerCauseSuivi">Confirmer</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                <button type="submit" id="btnSubmitNouvelleSuivi" class="btn btn-submit-custom-suivi"><i class="fas fa-save" style="margin-left: 8px;"></i> حفظ المتابعة</button>
             </div>
         </div>
     </div>
 </div>
+@endif
+
+
         @if(isset($echantillon) && $echantillon && $echantillon->entreprise)
-            {{-- Modale RendezVous --}}
-            <div class="modal fade" id="rendezVousModal" tabindex="-1" role="dialog" aria-labelledby="rendezVousModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background-color: #1abc9c; color: white;"><h5 class="modal-title" id="rendezVousModalLabel">إضافة موعد جديد</h5><button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-right"><form id="formAjouterRendezVous" action="{{ route('rendezvous.store', ['id' => $echantillon->id]) }}" method="POST">@csrf<div class="form-group"><label for="dateRdv">تاريخ ووقت الموعد <span class="text-danger">*</span></label><input type="datetime-local" class="form-control" id="dateRdv" name="heure_debut" required></div><div class="form-group"><label for="lieuRdv">مكان الموعد (ملاحظات)</label><input type="text" class="form-control" id="lieuRdv" name="lieu_rdv_notes" placeholder="أدخل مكان الموعد أو تفاصيل"></div><div class="form-group"><label for="contactIdRdv">جهة الاتصال (اختياري)</label>@if(isset($echantillon->entreprise) && $echantillon->entreprise->contacts->isNotEmpty())<select class="form-control" id="contactIdRdv" name="contact_id"><option value="">بدون جهة اتصال محددة</option>@foreach($echantillon->entreprise->contacts as $contact)<option value="{{ $contact->id }}">{{ $contact->prenom }} {{ $contact->nom }} {{ $contact->poste ? '(' . $contact->poste . ')' : '' }}</option>@endforeach</select>@else<input type="text" class="form-control" id="contactNomRdv" name="contact_nom" placeholder="أدخل اسم جهة الاتصال (اختياري)"><small class="form-text text-muted">لا توجد جهات اتصال مسجلة.</small>@endif</div><div class="form-group"><label for="notesRdv">ملاحظات إضافية للموعد (اختياري)</label><textarea class="form-control" id="notesRdv" name="notes" rows="3" placeholder="أدخل ملاحظات حول الموعد"></textarea></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button><button type="submit" id="btnSubmitRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c;">حفظ الموعد</button></div></form></div></div></div></div>
+            {{-- ****************************************************** --}}
+            {{-- ***** DEBUT DE LA SECTION MODIFIÉE POUR RENDEZVOUSMODAL ***** --}}
+            {{-- ****************************************************** --}}
+            <div class="modal fade" id="rendezVousModal" tabindex="-1" role="dialog" aria-labelledby="rendezVousModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #1abc9c; color: white;">
+                            <h5 class="modal-title" id="rendezVousModalLabel">إضافة موعد جديد</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                        <div class="modal-body text-right">
+                            {{-- Le formulaire pour ajouter un rendez-vous --}}
+                            {{-- Assurez-vous que $echantillon est disponible et a un ID --}}
+                            <form id="formAjouterRendezVous" action="{{ route('rendezvous.store', ['id' => $echantillon->id]) }}" method="POST">
+                                @csrf
+                                <div class="form-group">
+                                    <label for="heure_rdv_modal">تاريخ ووقت الموعد <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control @error('heure_rdv') is-invalid @enderror" id="heure_rdv_modal" name="heure_rdv" value="{{ old('heure_rdv') }}" required>
+                                    @error('heure_rdv')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                               <div class="form-group">
+    <label for="contact_personne_associee_nom_modal">جهة الاتصال بالشركة (اختياري)</label>
+    @if(isset($echantillon->entreprise) && $echantillon->entreprise->contacts->isNotEmpty())
+        <select class="form-control" id="contact_personne_associee_nom_modal" name="contact_rdv">
+            {{-- MODIFIÉ: name="contact_personne_associee_nom" --}}
+            <option value="">بدون جهة اتصال محددة</option>
+            @foreach($echantillon->entreprise->contacts as $contact)
+                {{-- MODIFIÉ: value contient maintenant le nom et le poste --}}
+                <option value="{{ $contact->prenom }} {{ $contact->nom }} {{ $contact->poste ? '(' . $contact->poste . ')' : '' }}">
+                    {{ $contact->prenom }} {{ $contact->nom }} {{ $contact->poste ? '(' . $contact->poste . ')' : '' }}
+                </option>
+            @endforeach
+        </select>
+    @else
+        {{-- Ce champ texte est déjà correct pour une saisie manuelle du nom --}}
+        <input type="text" class="form-control" id="contact_personne_associee_nom_fallback_modal" name="contact_rdv" placeholder="أدخل اسم جهة الاتصال (اختياري)">
+        <small class="form-text text-muted">لا توجد جهات اتصال مسجلة.</small>
+    @endif
+</div>
+                                <div class="form-group">
+                                    <label for="notes_modal">ملاحظات إضافية للموعد (اختياري)</label>
+                                    <textarea class="form-control @error('notes') is-invalid @enderror" id="notes_modal" name="notes" rows="3" placeholder="أدخل ملاحظات حول الموعد">{{ old('notes') }}</textarea>
+                                    @error('notes')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                
+                                {{-- Champ caché pour identifier la soumission de ce formulaire modal spécifique (utile pour réouvrir en cas d'erreur) --}}
+                                <input type="hidden" name="form_modal_submitted" value="rendezVousModal">
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                                    <button type="submit" id="btnSubmitRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c;">حفظ الموعد</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- **************************************************** --}}
+            {{-- ***** FIN DE LA SECTION MODIFIÉE POUR RENDEZVOUSMODAL ***** --}}
+            {{-- **************************************************** --}}
             
             {{-- Modale Telephone (pour ajouter un numéro à l'entreprise) --}}
             <div class="modal fade" id="telephoneModal" tabindex="-1" role="dialog" aria-labelledby="telephoneModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background-color: #3498db; color: white;"><h5 class="modal-title" id="telephoneModalLabel">إضافة رقم هاتف جديد</h5><button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-right"><form action="{{ route('telephones.store', ['entreprise_id' => $echantillon->entreprise->id]) }}" method="POST">@csrf<div class="form-group"><label for="numeroTel">رقم الهاتف <span class="text-danger">*</span></label><input type="text" class="form-control" id="numeroTel" name="numero" placeholder="أدخل رقم الهاتف" required></div><div class="form-group"><label for="sourceTel">المصدر (اختياري)</label><input type="text" class="form-control" id="sourceTel" name="source" placeholder="أدخل مصدر الرقم"></div><div class="form-check"><input type="checkbox" class="form-check-input" id="estPrimaireTel" name="est_primaire" value="1"><label class="form-check-label" for="estPrimaireTel">رقم أساسي</label><small class="form-text text-muted">حدد إذا كان هذا الرقم هو الرقم الأساسي.</small></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button><button type="submit" class="btn btn-primary" style="background-color: #3498db; border-color: #3498db;">حفظ رقم الهاتف</button></div></form></div></div></div></div>
@@ -334,6 +440,9 @@ J'ai besoin de parler au responsable des ressources humaines.
 Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de téléphone direct • Adresse e-mail professionnelle
                                 </pre></div></div><div class="form-group mt-3"><label for="notesAppel">ملاحظات المكالمة (اختياري)</label><textarea class="form-control" id="notesAppel" name="notesAppel" rows="3" placeholder="أدخل ملاحظات حول المكالمة"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button></div></div></div></div>
         @endif {{-- ✅ Fin du @if qui englobe les modales conditionnelles --}}
+       
+
+
     </div> {{-- Fin de .container-fluid --}}
 @endsection
 
@@ -408,6 +517,7 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
 
     document.addEventListener('DOMContentLoaded', function () {
         
+        
         console.log('🚀 PAGE INDEX CHARGÉE - JS MODIFIÉ EN COURS 🚀');
         const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
@@ -472,7 +582,7 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
     console.log(`🔄 updateCallUI - Appel en cours demandé: ${calling}, Données d'appel reçues:`, appelData);
     isCalling = calling;
     currentAppelId = appelData ? appelData.id : null;
-    console.log(`    Nouveau statut UI: isCalling = ${isCalling}, currentAppelId = ${currentAppelId}`);
+    console.log(`   Nouveau statut UI: isCalling = ${isCalling}, currentAppelId = ${currentAppelId}`);
 
     const btnLancerAppelElem = document.getElementById('btnLancerAppel');
     const appelActionsElem = document.getElementById('appelActions');
@@ -567,6 +677,7 @@ if (btnRefusAppel) {
     });
 }
 
+
         // --- NOUVELLE LOGIQUE POUR MODAL DE SÉLECTION DE NUMÉRO ---
         const selectNumeroModal = document.getElementById('selectNumeroModal');
         const listeNumerosContainer = document.getElementById('listeNumerosContainer');
@@ -598,7 +709,6 @@ if (btnRefusAppel) {
                     if(etatVerification === 'valide') { etatBadgeClass = 'badge-success'; etatText = 'صالح'; }
                     else if(etatVerification === 'faux_numero') { etatBadgeClass = 'badge-danger'; etatText = 'رقم خاطئ'; }
                     else if(etatVerification === 'pas_programme') { etatBadgeClass = 'badge-warning'; etatText = 'لا يرد'; }
-                    else if(etatVerification === 'ne_pas_deranger') { etatBadgeClass = 'badge-dark'; etatText = 'عدم الإزعاج'; }
                     else if(etatVerification === 'non_verifie') { etatBadgeClass = 'badge-secondary'; etatText = 'لم يتم التحقق منه'; }
                     else { etatText = etatVerification; }
                     displayText += ` <span class="badge ${etatBadgeClass} numero-badge-etat" data-current-status="${etatVerification}">${etatText}</span>`;
@@ -617,7 +727,6 @@ if (btnRefusAppel) {
                         if(etatVerificationContact === 'valide') { etatBadgeClass = 'badge-success'; etatText = 'صالح'; }
                         else if(etatVerificationContact === 'faux_numero') { etatBadgeClass = 'badge-danger'; etatText = 'رقم خاطئ'; }
                         else if(etatVerificationContact === 'pas_programme') { etatBadgeClass = 'badge-warning'; etatText = 'لا يرد'; }
-                        else if(etatVerificationContact === 'ne_pas_deranger') { etatBadgeClass = 'badge-dark'; etatText = 'عدم الإزعاج'; }
                         else if(etatVerificationContact === 'non_verifie') { etatBadgeClass = 'badge-secondary'; etatText = 'لم يتم التحقق منه'; }
                         else { etatText = etatVerificationContact; }
                         displayText += ` <span class="badge ${etatBadgeClass} numero-badge-etat" data-current-status="${etatVerificationContact}">${etatText}</span>`;
@@ -642,12 +751,12 @@ if (btnRefusAppel) {
                         if(btnEnregistrerStatutNumero) btnEnregistrerStatutNumero.disabled = false;
                         // Pré-sélectionner le statut actuel dans le dropdown si possible
                         if (currentStatus && statutNumeroAppelSelect) {
-                             if (Array.from(statutNumeroAppelSelect.options).some(opt => opt.value === currentStatus)) {
-                                statutNumeroAppelSelect.value = currentStatus;
-                             } else {
-                                // Si le statut actuel n'est pas une option valide (ex: un ancien statut), remettre à 'valide' ou 'non_verifie'
-                                statutNumeroAppelSelect.value = 'non_verifie'; 
-                             }
+                                if (Array.from(statutNumeroAppelSelect.options).some(opt => opt.value === currentStatus)) {
+                                    statutNumeroAppelSelect.value = currentStatus;
+                                } else {
+                                    // Si le statut actuel n'est pas une option valide (ex: un ancien statut), remettre à 'valide' ou 'non_verifie'
+                                    statutNumeroAppelSelect.value = 'non_verifie'; 
+                                }
                         } else if (statutNumeroAppelSelect) {
                             statutNumeroAppelSelect.value = 'valide'; // Défaut si pas de statut actuel connu
                         }
@@ -663,14 +772,14 @@ if (btnRefusAppel) {
                 btnLancerAppelGlobal.setAttribute('data-echantillon-id', echantillonDataForModal.echantillon_id);
                 checkInitialCallState(); // Vérifie si un appel est déjà en cours au chargement
             } else {
-                 console.warn("Impossible d'initialiser #btnLancerAppel, pas d'échantillon actif.");
+                   console.warn("Impossible d'initialiser #btnLancerAppel, pas d'échantillon actif.");
             }
             
             btnLancerAppelGlobal.addEventListener('click', async function (e) {
                 e.preventDefault();
                 // ... (Logique de btnLancerAppel comme dans ma réponse précédente détaillée - Turn 10)
                 // S'assurer d'appeler populateNumeroModal(echantillonDataForModal);
-                 console.log(`🔥 CLIC sur #btnLancerAppel! isCalling: ${isCalling}, currentAppelId: ${currentAppelId}`);
+                   console.log(`🔥 CLIC sur #btnLancerAppel! isCalling: ${isCalling}, currentAppelId: ${currentAppelId}`);
                 if (!isCalling) { 
                     const echantillonIdPourAppel = this.getAttribute('data-echantillon-id');
                     if (!echantillonIdPourAppel) { showFeedback('معرف العينة مفقود. يرجى تحديث الصفحة.', 'danger'); return; }
@@ -893,12 +1002,122 @@ if (btnRefusAppel) {
             });
         }
         
+        // Gestion du bouton "Ajouter Suivi" pour ouvrir la modale
+const btnOuvrirModalAjoutSuivi = document.getElementById('btnOuvrirModalAjoutSuivi');
+if (btnOuvrirModalAjoutSuivi) {
+    btnOuvrirModalAjoutSuivi.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('🔵 Clic sur #btnOuvrirModalAjoutSuivi - Ouverture de la modale Ajouter Suivi');
+        const formAjouterNouveauSuivi = document.getElementById('formAjouterNouveauSuivi');
+        if (formAjouterNouveauSuivi) {
+            formAjouterNouveauSuivi.reset(); // Réinitialiser le formulaire
+            const causeSuiviInput = document.getElementById('cause_suivi_modal_input');
+            if (causeSuiviInput) causeSuiviInput.classList.remove('is-invalid'); // Réinitialiser l'état d'erreur
+            const noteSuiviInput = document.getElementById('note_suivi_modal_input');
+            if (noteSuiviInput) noteSuiviInput.classList.remove('is-invalid');
+        }
+        if (typeof $ !== 'undefined' && $('#ajouterSuiviModal').modal) {
+            $('#ajouterSuiviModal').modal('show');
+        } else {
+            console.error('jQuery ou Bootstrap modal non disponible pour #ajouterSuiviModal');
+        }
+    });
+}
+
+// Gestion de la soumission du formulaire de suivi
+const btnSubmitNouvelleSuivi = document.getElementById('btnSubmitNouvelleSuivi');
+if (btnSubmitNouvelleSuivi) {
+    btnSubmitNouvelleSuivi.addEventListener('click', async function(e) {
+        e.preventDefault();
+        console.log('💾 Clic sur #btnSubmitNouvelleSuivi - Soumission du suivi');
+
+        const form = document.getElementById('formAjouterNouveauSuivi');
+        const causeSuiviInput = document.getElementById('cause_suivi_modal_input');
+        const noteSuiviInput = document.getElementById('note_suivi_modal_input');
+        const causeErrorMsg = document.getElementById('cause_suivi_modal_error_msg');
+        const echantillonId = document.getElementById('suivi_echantillon_id_modal_input_js')?.value;
+
+        if (!echantillonId) {
+            showFeedback('معرف العينة مفقود. يرجى تحديث الصفحة.', 'danger');
+            return;
+        }
+
+        // Validation côté client
+        if (!causeSuiviInput.value) {
+            causeSuiviInput.classList.add('is-invalid');
+            causeErrorMsg.textContent = 'يرجى اختيار سبب المتابعة.';
+            showFeedback('يرجى اختيار سبب المتابعة.', 'warning');
+            return;
+        } else {
+            causeSuiviInput.classList.remove('is-invalid');
+            causeErrorMsg.textContent = '';
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
+        try {
+            const response = await fetch('{{ route("suivis.store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    echantillon_enquete_id: echantillonId,
+                    cause_suivi: causeSuiviInput.value,
+                    note: noteSuiviInput.value
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showFeedback(data.message || 'تم حفظ المتابعة بنجاح!');
+                if (typeof $ !== 'undefined' && $('#ajouterSuiviModal').modal) {
+                    $('#ajouterSuiviModal').modal('hide');
+                }
+                form.reset();
+                // Optionnel : Recharger la page pour refléter les changements
+                window.location.reload();
+            } else {
+                showFeedback(data.message || 'فشل في حفظ المتابعة.', 'danger');
+            }
+        } catch (error) {
+            console.error('Erreur AJAX (suivi):', error);
+            showFeedback('خطأ في الاتصال بالخادم أثناء حفظ المتابعة.', 'danger');
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-save" style="margin-left: 8px;"></i> حفظ المتابعة';
+        }
+    });
+}
         // Vos autres boutons et logiques (btnAjouterRendezVous, btnVoirScript, etc.)
         const btnAjouterRendezVous = document.getElementById('btnAjouterRendezVous');
-        if (btnAjouterRendezVous) { btnAjouterRendezVous.addEventListener('click', function (e) { e.preventDefault(); const formRdv = document.getElementById('formAjouterRendezVous'); if(formRdv) {formRdv.reset(); @if(isset($echantillon) && $echantillon && $echantillon->entreprise) formRdv.action = `{{ route('rendezvous.store', ['id' => $echantillon->id]) }}`; @endif } if (typeof $ !== 'undefined' && $('#rendezVousModal').modal) $('#rendezVousModal').modal('show'); }); }
+        // Correction: s'assurer que le formulaire dans la modale est réinitialisé et l'action est correctement définie
+        if (btnAjouterRendezVous) {
+            btnAjouterRendezVous.addEventListener('click', function (e) {
+                e.preventDefault();
+                const formRdv = document.getElementById('formAjouterRendezVous'); // C'est l'ID du formulaire DANS la modale
+                if (formRdv) {
+                    formRdv.reset(); // Réinitialise les champs du formulaire
+                    @if(isset($echantillon) && $echantillon && $echantillon->id)
+                        // Assure que l'action du formulaire est correcte pour l'échantillon actuel
+                        formRdv.action = `{{ route('rendezvous.store', ['id' => $echantillon->id]) }}`;
+                    @endif
+                }
+                // Ouvre la modale
+                if (typeof $ !== 'undefined' && $('#rendezVousModal').modal) {
+                    $('#rendezVousModal').modal('show');
+                }
+            });
+        }
         
-        const btnSubmitRendezVous = document.getElementById('btnSubmitRendezVous');
-        if (btnSubmitRendezVous) { btnSubmitRendezVous.addEventListener('click', async function() { /* ... Votre code AJAX pour soumission RDV ... */ }); }
+        
+        // const btnSubmitRendezVous = document.getElementById('btnSubmitRendezVous'); // Ce bouton est DANS la modale
+        // Sa logique de soumission est gérée par le type="submit" du formulaire.
+        // Si vous avez besoin d'une soumission AJAX, le code irait ici, attaché à l'événement de soumission du formulaire.
 
         const btnVoirScript = document.getElementById('btnVoirScript');
         if (btnVoirScript) { btnVoirScript.addEventListener('click', function (e) { e.preventDefault(); if (typeof $ !== 'undefined' && $('#appelScriptModal').modal) $('#appelScriptModal').modal('show'); }); }
@@ -930,7 +1149,7 @@ if (btnRefusAppel) {
 
         const btnConfirmerCauseSuivi = document.getElementById('btnConfirmerCauseSuivi');
         if (btnConfirmerCauseSuivi) {
-            btnConfirmerCauseSuivi.onclick = async () => {
+            btnConfirmerCauseSuivi.onclick = async () => { // Utiliser une fonction fléchée pour conserver le 'this' de btnRelance si besoin, ou le gérer autrement.
                 const causeSuiviSelect = document.getElementById('causeSuiviSelect');
                 const causeSuivi = causeSuiviSelect ? causeSuiviSelect.value : '';
 
@@ -943,8 +1162,10 @@ if (btnRefusAppel) {
                     $(causeSuiviModal).modal('hide');
                 }
 
-                this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+                // Gérer l'état du bouton de confirmation de la cause
+                btnConfirmerCauseSuivi.disabled = true; // Ou le 'this' de btnRelance si c'est l'intention.
+                // Mettre à jour le texte du bouton de confirmation de la cause
+                // btnConfirmerCauseSuivi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
 
                 try {
                     const response = await fetch('{{ route('relances.store') }}', {
@@ -978,12 +1199,15 @@ if (btnRefusAppel) {
                     console.error('Erreur AJAX (relance) :', error);
                     showFeedback('⚠️ Une erreur s\'est produite lors de la tentative d\'enregistrement du suivi.', 'danger');
                 } finally {
-                    this.disabled = false;
-                    this.innerHTML = '<i class="typcn typcn-arrow-sync ml-1"></i> تسجيل ملاحظة / متابعة';
+                     btnConfirmerCauseSuivi.disabled = false; // Réactiver le bouton
+                     // Réinitialiser le texte du bouton
+                     // btnConfirmerCauseSuivi.innerHTML = 'Confirmer'; // ou le texte original
                 }
             };
         }
+        
     });
+    
 }
         // Logique de beforeunload et navigationElements (si nécessaire)
         // window.addEventListener('beforeunload', function (event) { /* ... Votre code ... */ });
@@ -1009,6 +1233,16 @@ if (btnRefusAppel) {
                 switchToArabic.classList.add('btn-secondary'); switchToArabic.classList.remove('btn-primary');
             });
         }
+        
+        
+
+        // Pour la réouverture de la modale RendezVous en cas d'erreur de validation Laravel
+        @if($errors->any() && old('form_modal_submitted') == 'rendezVousModal')
+            if (typeof $ !== 'undefined' && $('#rendezVousModal').modal) {
+                $('#rendezVousModal').modal('show');
+            }
+        @endif
+        
 
     }); // Fin de DOMContentLoaded
 </script>

@@ -24,18 +24,10 @@ class DatabaseSeeder extends Seeder
 
         // Liste personnalisée de libellés d'activité en français
         $libellesActivite = [
-            'Conseil en gestion',
-            'Développement logiciel',
-            'Commerce de détail',
-            'Fabrication industrielle',
-            'Services financiers',
-            'Transport et logistique',
-            'Restauration',
-            'Santé et bien-être',
-            'Éducation et formation',
-            'Construction',
-            'Marketing et publicité',
-            'Tourisme et hôtellerie',
+            'Conseil en gestion', 'Développement logiciel', 'Commerce de détail',
+            'Fabrication industrielle', 'Services financiers', 'Transport et logistique',
+            'Restauration', 'Santé et bien-être', 'Éducation et formation',
+            'Construction', 'Marketing et publicité', 'Tourisme et hôtellerie',
         ];
 
         // Liste personnalisée de gouvernorats tunisiens
@@ -48,6 +40,15 @@ class DatabaseSeeder extends Seeder
 
         // Liste de statuts pour échantillons d'enquêtes
         $statutsEchantillons = ['nouveau', 'en_attente', 'en_cours', 'termine', 'annule'];
+
+        // Liste de causes de suivi (basée sur votre formulaire dans index.blade.php)
+        $causesSuivi = [
+            'Réponse absente',
+            'Personne non adéquate',
+            'Rappel demandé par client',
+            'Information manquante',
+            'Autre',
+        ];
 
         // 1. Créer 5 utilisateurs
         $utilisateurs = collect();
@@ -88,7 +89,6 @@ class DatabaseSeeder extends Seeder
                 $nomEntreprise = $faker->company;
             } while ($nomsEntreprises->contains($nomEntreprise));
 
-            // Ajouter le nom à la liste pour éviter les doublons
             $nomsEntreprises->push($nomEntreprise);
 
             $entreprise = Entreprise::create([
@@ -147,12 +147,12 @@ class DatabaseSeeder extends Seeder
 
             // 8. Créer 1 à 3 rendez-vous par échantillon
             for ($k = 0; $k < rand(1, 3); $k++) {
-                $heureDebut = $faker->dateTimeBetween('now', '+1 week');
+                $heureRdv = $faker->dateTimeBetween('now', '+1 week');
                 RendezVous::create([
                     'echantillon_enquete_id' => $echantillon->id,
                     'utilisateur_id' => $utilisateurs->random()->id,
-                    'heure_debut' => $heureDebut,
-                    'heure_fin' => $faker->dateTimeBetween($heureDebut, $heureDebut->format('Y-m-d H:i:s').' +2 hours'),
+                    'heure_rdv' => $heureRdv,
+                    'contact_rdv' => $faker->name(),
                     'statut' => $faker->randomElement(['planifie', 'confirme', 'annule']),
                     'notes' => $faker->optional()->paragraph,
                 ]);
@@ -163,20 +163,19 @@ class DatabaseSeeder extends Seeder
                 Suivi::create([
                     'echantillon_enquete_id' => $echantillon->id,
                     'utilisateur_id' => $utilisateurs->random()->id,
-                    'date_suivi' => $faker->dateTimeBetween('-1 month', 'now'),
-                    'commentaire' => $faker->optional()->paragraph,
-                    'resultat' => $faker->randomElement(['positif', 'negatif', 'en_attente']),
+                    'cause_suivi' => $faker->randomElement($causesSuivi),
+                    'note' => $faker->optional()->paragraph,
                 ]);
             }
 
             // 10. Créer 1 à 3 appels par échantillon
             for ($k = 0; $k < rand(1, 3); $k++) {
-                $heureDebut = $faker->dateTimeBetween('-1 month', 'now');
+                $heureDebutAppel = $faker->dateTimeBetween('-1 month', 'now');
                 Appel::create([
                     'echantillon_enquete_id' => $echantillon->id,
                     'utilisateur_id' => $utilisateurs->random()->id,
-                    'heure_debut' => $heureDebut,
-                    'heure_fin' => $faker->dateTimeBetween($heureDebut, $heureDebut->format('Y-m-d H:i:s').' +1 hour'),
+                    'heure_debut' => $heureDebutAppel,
+                    'heure_fin' => $faker->dateTimeBetween($heureDebutAppel, $heureDebutAppel->format('Y-m-d H:i:s') . ' +1 hour'),
                     'statut' => $faker->randomElement(['termine', 'en_cours', 'echec']),
                     'notes' => $faker->optional()->paragraph,
                 ]);

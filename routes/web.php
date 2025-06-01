@@ -65,6 +65,9 @@ Route::middleware(['auth'])->group(function () {
     // Route des statistiques
     Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
 
+
+//    Route::get('/entreprises/{entreprise}', [RendezVousController::class, 'showEntreprisePage'])->name('entreprise.show');
+
     // --- Routes commentées à vérifier ---
     // Route::get('/entreprise', [EnterpriseDetailsController::class, 'show'])->name('entreprise.show');
     // Route::post('/entreprise/{entreprise_id}/telephone', [EnterpriseDetailsController::class, 'storeTelephone'])->name('entreprise.telephone.store');
@@ -94,5 +97,7 @@ Route::prefix('echantillons')->name('echantillons.')->group(function () {
 });
 
 Route::post('/relances', [SuiviController::class, 'creerRappel'])->name('relances.store');
+
+Route::post('/suivis', [SuiviController::class, 'store'])->name('suivis.store');
 
 ?>

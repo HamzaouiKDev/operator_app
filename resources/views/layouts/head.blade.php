@@ -1,5 +1,5 @@
 <!-- Title -->
-<title> Valex -  Premium dashboard ui bootstrap rwd admin html5 template </title>
+<title> برنامج ادارة مركز نداء </title>
 <!-- Favicon -->
 <link rel="icon" href="{{URL::asset('assets/img/brand/ins.svg')}}" type="image/x-icon"/>
 <!-- Icons css -->
@@ -17,3 +17,4 @@
 <link href="{{URL::asset('assets/css-rtl/style-dark.css')}}" rel="stylesheet">
 <!---Skinmodes css-->
 <link href="{{URL::asset('assets/css-rtl/skin-modes.css')}}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
