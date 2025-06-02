@@ -54,7 +54,7 @@ class SuiviController extends Controller
         $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
                                             ->count();
 
-        return view('indexSuivis', compact(
+        return view('indexSuivi', compact(
             'suivis',
             'nombreEntreprisesRepondues',
             'nombreEntreprisesAttribuees'

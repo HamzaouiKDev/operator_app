@@ -252,7 +252,7 @@
                                         @foreach($rendezVous as $rdv)
                                             @if($rdv->echantillonEnquete && $rdv->echantillonEnquete->entreprise)
                                                 <tr title="عرض تفاصيل الشركة: {{ $rdv->echantillonEnquete->entreprise->nom_entreprise }}"
-                                                    onclick="window.location='{{ route('entreprise.show', ['entreprise' => $rdv->echantillonEnquete->entreprise_id]) }}'">
+                                                    onclick="window.location='{{ route('echantillons.show', ['echantillon' => $rdv->echantillonEnquete->id]) }}'">
                                                     <td class="company-name">
                                                         <i class="fas fa-building"></i>
                                                         {{ $rdv->echantillonEnquete->entreprise->nom_entreprise }}

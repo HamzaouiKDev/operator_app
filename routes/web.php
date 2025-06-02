@@ -69,7 +69,7 @@ Route::middleware(['auth'])->group(function () {
 //    Route::get('/entreprises/{entreprise}', [RendezVousController::class, 'showEntreprisePage'])->name('entreprise.show');
 
     // --- Routes commentées à vérifier ---
-    // Route::get('/entreprise', [EnterpriseDetailsController::class, 'show'])->name('entreprise.show');
+    //Route::get('/entreprise', [EnterpriseDetailsController::class, 'show'])->name('entreprise.show');
     // Route::post('/entreprise/{entreprise_id}/telephone', [EnterpriseDetailsController::class, 'storeTelephone'])->name('entreprise.telephone.store');
     // Route::post('/entreprise/{entreprise_id}/contact', [EnterpriseDetailsController::class, 'storeContact'])->name('entreprise.contact.store');
     // Route::post('/entreprise/rendezvous/{echantillon_enquete_id}', [EnterpriseDetailsController::class, 'storeRendezVous'])->name('entreprise.rendezvous.store');
@@ -98,6 +98,9 @@ Route::prefix('echantillons')->name('echantillons.')->group(function () {
 
 Route::post('/relances', [SuiviController::class, 'creerRappel'])->name('relances.store');
 
+Route::get('/suivis', [SuiviController::class, 'indexSuivis'])->name('suivis.index');
 Route::post('/suivis', [SuiviController::class, 'store'])->name('suivis.store');
+Route::get('/echantillons/{echantillon}', [EchantillonController::class, 'show'])->name('echantillons.show');
+
 
 ?>

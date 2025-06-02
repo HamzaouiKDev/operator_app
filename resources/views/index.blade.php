@@ -57,7 +57,7 @@
     <div class="breadcrumb-header justify-content-between" style="background-color: #3498db;">
         <div class="left-content">
             <div>
-                <h2 class="main-content-title tx-24 mg-b-1 mg-b-lg-1 text-white" dir="rtl">مرحباً، مرحباً بك مجدداً!</h2>
+                <h2 class="main-content-title tx-24 mg-b-1 mg-b-lg-1 text-white" dir="rtl">مرحباً بك {{ Auth::user()->name }} ! </h2>
                 <p class="mg-b-0 text-white" dir="rtl">لوحة تحكم لمتابعة سير العمل.</p>
             </div>
         </div>
@@ -187,7 +187,6 @@
                                                             if($etatVerif === 'valide') { $etatBadgeClass = 'badge-success'; $etatText = 'صالح'; }
                                                             else if($etatVerif === 'faux_numero') { $etatBadgeClass = 'badge-danger'; $etatText = 'رقم خاطئ'; }
                                                             else if($etatVerif === 'pas_programme') { $etatBadgeClass = 'badge-warning'; $etatText = 'لا يرد'; }
-                                                            else if($etatVerif === 'ne_pas_deranger') { $etatBadgeClass = 'badge-dark'; $etatText = 'عدم الإزعاج'; }
                                                             else if($etatVerif === 'non_verifie') { $etatBadgeClass = 'badge-secondary'; $etatText = 'لم يتم التحقق منه'; }
                                                         @endphp
                                                         <span class="badge {{ $etatBadgeClass }} numero-badge-etat">{{ $etatText }}</span>
@@ -273,7 +272,6 @@
                                 <option value="valide" selected>صالح (لبدء المكالمة)</option>
                                 <option value="faux_numero">رقم خاطئ</option>
                                 <option value="pas_programme">غير مبرمج</option>
-                                <option value="ne_pas_deranger">عدم الإزعاج</option>
                             </select>
                         </div>
                         <p id="selectedPhoneNumberInfo" class="mt-2 font-weight-bold" style="display:none;">الرقم المختار: <span id="numeroChoisiText" style="color: #007bff;"></span></p>
@@ -866,7 +864,6 @@ if (btnRefusAppel) {
                         if (etatVerificationLu === 'valide') { etatBadgeClass = 'badge-success'; etatText = 'صالح'; }
                         else if (etatVerificationLu === 'faux_numero') { etatBadgeClass = 'badge-danger'; etatText = 'رقم خاطئ'; }
                         else if (etatVerificationLu === 'pas_programme') { etatBadgeClass = 'badge-warning'; etatText = 'لا يرد'; }
-                        else if (etatVerificationLu === 'ne_pas_deranger') { etatBadgeClass = 'badge-dark'; etatText = 'عدم الإزعاج'; }
                         else if (etatVerificationLu === 'non_verifie') { etatBadgeClass = 'badge-secondary'; etatText = 'لم يتم التحقق منه'; }
                         else { etatText = etatVerificationLu; }
                         badge.className = `badge ${etatBadgeClass} numero-badge-etat`;
@@ -909,7 +906,6 @@ if (btnRefusAppel) {
                 if (statutChoisi === 'valide') { etatBadgeClass = 'badge-success'; etatText = 'صالح'; }
                 else if (statutChoisi === 'faux_numero') { etatBadgeClass = 'badge-danger'; etatText = 'رقم خاطئ'; }
                 else if (statutChoisi === 'pas_programme') { etatBadgeClass = 'badge-warning'; etatText = 'لا يرد'; }
-                else if (statutChoisi === 'ne_pas_deranger') { etatBadgeClass = 'badge-dark'; etatText = 'عدم الإزعاج'; }
                 else if (statutChoisi === 'non_verifie') { etatBadgeClass = 'badge-secondary'; etatText = 'لم يتم التحقق منه'; }
                 else { etatText = statutChoisi; }
 

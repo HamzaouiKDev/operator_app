@@ -552,4 +552,45 @@ class EchantillonController extends Controller
 
         return response()->json(['success' => true, 'message' => 'L\'échantillon a été marqué comme refusé avec succès.']);
     }
+    /**
+     * Affiche les détails d'un échantillon spécifique.
+     *
+     * @param  \App\Models\EchantillonEnquete  $echantillon L'instance injectée par Route Model Binding.
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
+    public function show(EchantillonEnquete $echantillon)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Vous devez être connecté pour accéder à cette page.');
+        }
+
+        Log::info("[EchantillonController@show] Demande d'affichage de l'échantillon #{$echantillon->id} par l'utilisateur #{$user->id}");
+
+        // Vérification : L'utilisateur ne peut voir que les échantillons qui lui sont assignés.
+        // Vous pouvez ajuster cette logique si, par exemple, un admin peut tout voir.
+        if ($echantillon->utilisateur_id !== $user->id) {
+            Log::warning("[EchantillonController@show] Tentative d'accès non autorisé à l'échantillon #{$echantillon->id} par l'utilisateur #{$user->id}. L'échantillon est assigné à {$echantillon->utilisateur_id}.");
+            return redirect()->route('echantillons.index')->with('error', "Vous n'êtes pas autorisé à voir les détails de cet échantillon.");
+            // Alternativement, pour une API ou une réponse plus directe:
+            // abort(403, "Vous n'êtes pas autorisé à voir les détails de cet échantillon.");
+        }
+
+        // Charger les relations nécessaires si elles ne sont pas déjà chargées (par sécurité)
+        // afficherAvecStatistiques le fait aussi, mais une double vérification ne nuit pas.
+        $echantillon->loadMissing([
+            'entreprise.telephones',
+            'entreprise.contacts',
+            'entreprise.emails'
+        ]);
+        
+        $nomEntreprise = optional($echantillon->entreprise)->nom_entreprise ?? 'N/A';
+        Log::info("[EchantillonController@show] Affichage des détails de l'échantillon #{$echantillon->id} (Entreprise: {$nomEntreprise}) pour l'utilisateur #{$user->id}.");
+
+        // Utiliser la méthode existante pour préparer et afficher la vue
+        return $this->afficherAvecStatistiques($echantillon, $user->id);
+    }
+
+
+
 }

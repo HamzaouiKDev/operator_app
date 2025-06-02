@@ -6,8 +6,6 @@
     {{-- Vos autres liens CSS si nécessaires --}}
     <link href="{{URL::asset('assets/plugins/owl-carousel/owl.carousel.css')}}" rel="stylesheet" />
     <link href="{{URL::asset('assets/plugins/jqvmap/jqvmap.min.css')}}" rel="stylesheet">
-    {{-- Suggestion: Importez la police Cairo dans votre layouts.master.blade.php --}}
-    {{-- <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet"> --}}
 
     <style>
         body {
@@ -46,7 +44,6 @@
         }
 
         .card-header-custom {
-            /* Un vert pour les RDV d'aujourd'hui pour les différencier */
             background-color: #28a745; /* Vert Bootstrap success */
             color: white;
             border-top-left-radius: calc(0.75rem - 1px); 
@@ -54,14 +51,8 @@
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid rgba(0,0,0,0.075); 
         }
-        .card-header-custom .card-title {
-            font-size: 1.5rem; 
-            font-weight: 600;
-        }
-        .card-header-custom .card-title i {
-            margin-left: 10px; 
-        }
-
+        .card-header-custom .card-title { font-size: 1.5rem; font-weight: 600; }
+        .card-header-custom .card-title i { margin-left: 10px; }
 
         .card-body-custom {
             padding: 1.5rem;
@@ -71,115 +62,86 @@
         }
 
         .table-rdv thead th {
-            background-color: #ffffff;
-            color: #28a745;           /* ✅ Texte en vert pour correspondre au header de la carte */
-            font-weight: 700;         
-            text-transform: uppercase; 
-            font-size: 0.9rem;          
-            letter-spacing: 0.05em;     
-            padding: 1.1rem 1.25rem;    
-            text-align: right;          
-            border-top: none;           
-            border-bottom: 3px solid #28a745; /* ✅ Bordure inférieure accentuée en vert */
-            white-space: nowrap;        
+            background-color: #ffffff; color: #28a745; font-weight: 700;       
+            text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.05em;     
+            padding: 1.1rem 1.25rem; text-align: right; border-top: none;           
+            border-bottom: 3px solid #28a745; white-space: nowrap;        
         }
 
         .table-rdv tbody tr {
             transition: background-color 0.15s ease-in-out;
             border-bottom: 1px solid #ecf0f1;
         }
-        .table-rdv tbody tr:last-child {
-            border-bottom: none;
-        }
+        .table-rdv tbody tr:last-child { border-bottom: none; }
         .table-rdv tbody tr:hover {
-            background-color: #e6f7e9; /* Un vert très clair au survol */
+            background-color: #e6f7e9; /* Vert très clair au survol par défaut */
             cursor: pointer;
         }
         .table-rdv td {
-            padding: 0.9rem 1.25rem; 
-            vertical-align: middle;
-            color: #3e5569;
-            font-size: 0.875rem;
+            padding: 0.9rem 1.25rem; vertical-align: middle;
+            color: #3e5569; font-size: 0.875rem;
         }
-        .table-rdv .text-muted {
-            font-size: 0.75rem;
-            color: #8898aa !important;
-        }
-        .table-rdv .company-name {
-            font-weight: 600;
-            color: #1e7e34; /* Un vert distinctif pour le nom de l'entreprise */
-        }
-        .table-rdv .company-name i {
-            margin-left: 8px; 
-            color: #28a745;
-        }
+        .table-rdv .text-muted { font-size: 0.75rem; color: #8898aa !important; }
+        .table-rdv .company-name { font-weight: 600; color: #1e7e34; }
+        .table-rdv .company-name i { margin-left: 8px; color: #28a745; }
 
         .search-form .form-control {
             border-radius: 0.375rem 0 0 0.375rem !important;
-            border: 1px solid #ced4da;
-            border-left: none;
+            border: 1px solid #ced4da; border-left: none;
         }
-        .search-form .btn { /* Style générique pour le bouton de recherche */
+        .search-form .btn { 
             border-radius: 0 0.375rem 0.375rem 0 !important;
             padding: 0.5rem 1rem;
         }
-         .search-form .btn-success { /* Utiliser btn-success pour le thème vert */
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-        .search-form .btn i {
-            margin-left: 5px;
-        }
-
+        .search-form .btn-success { background-color: #28a745; border-color: #28a745; }
+        .search-form .btn i { margin-left: 5px; }
 
         .empty-state-rdv {
-            background-color: #fff;
-            padding: 3rem 1.5rem;
-            border-radius: 0.75rem;
-            text-align: center;
-            color: #6c757d;
-            border: 1px dashed #d1d9e2;
+            background-color: #fff; padding: 3rem 1.5rem; border-radius: 0.75rem;
+            text-align: center; color: #6c757d; border: 1px dashed #d1d9e2;
         }
-        .empty-state-rdv i {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            color: #28a745; /* Icône en vert */
-        }
-        .empty-state-rdv p {
-            font-size: 1.05rem;
-        }
+        .empty-state-rdv i { font-size: 3.5rem; margin-bottom: 1rem; color: #28a745; }
+        .empty-state-rdv p { font-size: 1.05rem; }
+
         .alert-custom {
-            border-radius: 0.375rem;
-            padding: 0.9rem 1.25rem;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
+            border-radius: 0.375rem; padding: 0.9rem 1.25rem; font-size: 0.9rem;
+            display: flex; align-items: center;
         }
-        .alert-custom i {
-            margin-left: 10px;
-            font-size: 1.2rem;
-        }
+        .alert-custom i { margin-left: 10px; font-size: 1.2rem; }
         .alert-success-custom { background-color: #d4edda !important; border-color: #c3e6cb !important; color: #155724 !important; }
         .alert-danger-custom { background-color: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24 !important; }
         .alert-warning-custom { background-color: #fff3cd !important; border-color: #ffeeba !important; color: #856404 !important; }
 
-        .pagination .page-item.active .page-link {
-            background-color: #28a745; /* Pagination en vert */
-            border-color: #28a745;
-            color: white;
+        .pagination .page-item.active .page-link { background-color: #28a745; border-color: #28a745; color: white; }
+        .pagination .page-link { color: #28a745; border-radius: 0.25rem; margin: 0 3px; }
+        .pagination .page-link:hover { color: #1e7e34; background-color: #e6f7e9; }
+        .text-muted small, small.text-muted { color: #8898aa !important; }
+
+        /* --- NOUVEAUX STYLES POUR LES ANIMATIONS RDV --- */
+        .rdv-highlight-green {
+            animation: pulse-green 1.5s infinite ease-in-out;
         }
-        .pagination .page-link {
-            color: #28a745;
-            border-radius: 0.25rem;
-            margin: 0 3px;
+        @keyframes pulse-green {
+            0% { background-color: inherit; } /* Ou la couleur de fond normale de la ligne si différente de #fff */
+            50% { background-color: #d4edda; } /* Vert pâle (Bootstrap success background) */
+            100% { background-color: inherit; }
         }
-        .pagination .page-link:hover {
-            color: #1e7e34;
-            background-color: #e6f7e9;
+        .table-rdv tbody tr.rdv-highlight-green:hover {
+            animation: none; /* Stoppe l'animation de pulsation au survol */
+            background-color: #c3e6cb; /* Un vert légèrement plus soutenu pour le survol */
         }
-         .text-muted small, small.text-muted {
-            color: #8898aa !important;
+
+        .rdv-highlight-red {
+            background-color: #f8d7da !important; /* Rouge pâle (Bootstrap danger background), important pour passer outre le hover de base */
         }
+        /* Optionnel: si le texte devient difficile à lire sur fond rouge pâle */
+        /* .rdv-highlight-red td, .rdv-highlight-red td small, .rdv-highlight-red .company-name {
+            color: #58151c !important; 
+        } */
+        .table-rdv tbody tr.rdv-highlight-red:hover {
+            background-color: #f5c6cb !important; /* Un rouge légèrement plus soutenu pour le survol */
+        }
+        /* --- FIN NOUVEAUX STYLES --- */
     </style>
 @endsection
 
@@ -218,12 +180,11 @@
                         <h4 class="card-title mg-b-0"><i class="fas fa-calendar-day"></i> مواعيد اليوم</h4>
                     </div>
                     <div class="card-body card-body-custom text-right">
-                        {{-- La recherche par entreprise peut aussi être utile ici --}}
-                        <form method="GET" action="{{ route('rendezvous.aujourdhui') }}" class="mb-4 search-form"> {{-- Adapter la route si besoin --}}
+                        <form method="GET" action="{{ route('rendezvous.aujourdhui') }}" class="mb-4 search-form">
                             <div class="input-group">
                                 <input type="text" name="search_entreprise" class="form-control" placeholder="البحث عن شركة..." value="{{ request('search_entreprise') }}" aria-label="البحث عن شركة">
                                 <div class="input-group-append">
-                                    <button class="btn btn-success" type="submit"> {{-- Bouton de recherche en vert --}}
+                                    <button class="btn btn-success" type="submit">
                                         <i class="fas fa-search"></i> بحث
                                     </button>
                                 </div>
@@ -253,15 +214,16 @@
                                         @foreach($rendezVous as $rdv)
                                             @if($rdv->echantillonEnquete && $rdv->echantillonEnquete->entreprise)
                                                 <tr title="عرض تفاصيل الشركة: {{ $rdv->echantillonEnquete->entreprise->nom_entreprise }}"
-                                                    onclick="window.location='{{ route('entreprise.show', ['entreprise' => $rdv->echantillonEnquete->entreprise_id]) }}'">
+                                                    data-rdv-time="{{ $rdv->heure_rdv ? \Carbon\Carbon::parse($rdv->heure_rdv)->toIso8601String() : '' }}"
+                                                    onclick="window.location='{{ route('echantillons.show', ['echantillon' => $rdv->echantillonEnquete->id]) }}'">
                                                     <td class="company-name">
                                                         <i class="fas fa-building"></i>
                                                         {{ $rdv->echantillonEnquete->entreprise->nom_entreprise }}
                                                     </td>
                                                     <td>
-                                                        {{ $rdv->heure_rdv ? \Carbon\Carbon::parse($rdv->heure_rdv)->format('H:i') : 'غير محدد' }} {{-- Format H:i car c'est pour aujourd'hui --}}
+                                                        {{ $rdv->heure_rdv ? \Carbon\Carbon::parse($rdv->heure_rdv)->format('H:i') : 'غير محدد' }}
                                                         @if($rdv->heure_rdv)
-                                                            <br><small class="text-muted">({{ \Carbon\Carbon::parse($rdv->heure_rdv)->locale('ar')->diffForHumans() }})</small>
+                                                            <br><small class="text-muted">({{ (\Carbon\Carbon::parse($rdv->heure_rdv)->setTimezone(config('app.timezone')))->locale('ar')->diffForHumans() }})</small>
                                                         @endif
                                                     </td>
                                                     <td>{{ $rdv->contact_rdv ?? 'غير متوفر' }}</td>
@@ -280,7 +242,7 @@
                             @endif
                         @elseif(!request('search_entreprise'))
                             <div class="empty-state-rdv">
-                                <i class="fas fa-calendar-check"></i> {{-- Icône différente pour "pas de RDV aujourd'hui" --}}
+                                <i class="fas fa-calendar-check"></i>
                                 <p>لا توجد مواعيد مسجلة لهذا اليوم.</p>
                             </div>
                         @endif
@@ -294,9 +256,10 @@
 @section('js')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Script existant pour masquer les alertes
             setTimeout(function() {
-                const alerts = document.querySelectorAll('.auto-hide');
-                alerts.forEach(alert => {
+                const autoHideAlerts = document.querySelectorAll('.auto-hide');
+                autoHideAlerts.forEach(alert => {
                     if (alert) {
                         let opacity = 1;
                         const timer = setInterval(function () {
@@ -314,6 +277,40 @@
                     }
                 });
             }, 4000);
+
+            // Fonction pour mettre à jour la mise en évidence des RDV
+            function updateAppointmentHighlights() {
+                const now = new Date();
+                const fifteenMinutesInMilliseconds = 15 * 60 * 1000;
+
+                document.querySelectorAll('.table-rdv tbody tr[data-rdv-time]').forEach(row => {
+                    const rdvTimeString = row.dataset.rdvTime;
+                    if (!rdvTimeString) {
+                        return;
+                    }
+
+                    const rdvTime = new Date(rdvTimeString);
+                    const timeDifference = rdvTime.getTime() - now.getTime();
+
+                    // Réinitialiser les classes de mise en évidence avant d'appliquer la nouvelle
+                    row.classList.remove('rdv-highlight-green', 'rdv-highlight-red');
+
+                    if (timeDifference < 0) {
+                        // Le RDV est dans le passé (pour aujourd'hui)
+                        row.classList.add('rdv-highlight-red');
+                    } else if (timeDifference <= fifteenMinutesInMilliseconds) {
+                        // Le RDV est dans le futur ET dans les 15 prochaines minutes
+                        row.classList.add('rdv-highlight-green');
+                    }
+                    // Sinon (RDV dans le futur mais dans plus de 15 minutes), aucune classe spéciale n'est ajoutée.
+                });
+            }
+
+            // Exécuter la fonction au chargement de la page
+            updateAppointmentHighlights();
+
+            // Exécuter la fonction toutes les minutes pour mettre à jour le statut
+            setInterval(updateAppointmentHighlights, 60000); // 60000 ms = 1 minute
         });
     </script>
 @endsection
