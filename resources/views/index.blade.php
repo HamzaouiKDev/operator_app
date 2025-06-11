@@ -49,12 +49,25 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
+         /* NOUVEAUX STYLES pour agrandir les informations de l'entreprise */
+        .company-details-card .list-group-item {
+            font-size: 1.1rem; /* Augmente la taille de la police. Essayez 1.05rem, 1.1rem, 16px, ou 17px selon votre préférence. */
+            /* Optionnel: vous pouvez aussi augmenter légèrement le padding vertical si vous trouvez que c'est trop serré */
+             padding-top: 0.85rem; */
+             padding-bottom: 0.85rem; */
+        }
+
+        /* Optionnel: Rendre les étiquettes (en gras) un peu plus foncées pour un meilleur contraste avec la taille augmentée */
+        .company-details-card .list-group-item strong {
+            color: #343a40; /* Un gris foncé. Ajustez si nécessaire. */
+        }
+
     </style>
 @endsection
 
 @section('page-header')
     {{-- Votre breadcrumb-header --}}
-    <div class="breadcrumb-header justify-content-between" style="background-color: #3498db;">
+    <div class="breadcrumb-header justify-content-between" style="background-color: #3498db; padding: 15px 25px; align-items: center;">
         <div class="left-content">
             <div>
                 <h2 class="main-content-title tx-24 mg-b-1 mg-b-lg-1 text-white" dir="rtl">مرحباً بك {{ Auth::user()->name }} ! </h2>
@@ -86,13 +99,24 @@
                     </div>
                     <div class="card-body text-right">
                         @if(isset($echantillon) && $echantillon && $echantillon->entreprise)
-                            <div class="card border-primary mb-3" style="border-width: 2px;">
+                            <div class="card border-primary mb-3 company-details-card" style="border-width: 2px;">
                                 <div class="card-body">
                                     <h5 class="card-title text-primary">📋 معلومات الشركة</h5>
                                     <ul class="list-group list-group-flush text-right">
                                         <li class="list-group-item"><strong>🏢 اسم الشركة:</strong> {{ $echantillon->entreprise->nom_entreprise }}</li>
+                                        {{-- NOUVEAUX CHAMPS AJOUTÉS --}}
+                                        <li class="list-group-item"><strong>🔢 الرمز الوطني:</strong> {{ $echantillon->entreprise->code_national ?? 'غير متوفر' }}</li>
                                         <li class="list-group-item"><strong>🔧 النشاط:</strong> {{ $echantillon->entreprise->libelle_activite }}</li>
-                                        <li class="list-group-item"><strong>📍 العنوان:</strong> {{ $echantillon->entreprise->numero_rue }} {{ $echantillon->entreprise->nom_rue }}, {{ $echantillon->entreprise->ville }}, {{ $echantillon->entreprise->gouvernorat }}</li>
+                                        <li class="list-group-item">
+                                            <strong>📍 العنوان:</strong>
+                                            {{ $echantillon->entreprise->numero_rue }} {{ $echantillon->entreprise->nom_rue }},
+                                            {{ $echantillon->entreprise->ville }},
+                                            {{-- MODIFICATION ICI : Accède à la relation 'gouvernorat' et à sa colonne 'nom' --}}
+                                            {{ $echantillon->entreprise->gouvernorat->nom ?? 'غير متوفر' }}
+                                        </li>                                        <li class="list-group-item"><strong>🔖 حالة الشركة:</strong> {{ $echantillon->entreprise->statut ?? 'غير متوفر' }}</li>
+                                        <li class="list-group-item"><strong>📜 عنوان CNSS:</strong> {{ $echantillon->entreprise->adresse_cnss ?? 'غير متوفر' }}</li>
+                                        <li class="list-group-item"><strong>🌍 منطقة CNSS:</strong> {{ $echantillon->entreprise->localite_cnss ?? 'غير متوفر' }}</li>
+                                        {{-- FIN DES NOUVEAUX CHAMPS --}}
                                         <li class="list-group-item"><strong>📊 حالة العينة:</strong> 
                                             <span id="statutDisplay" style="cursor: pointer;" class="badge @if($echantillon->statut == 'répondu' || $echantillon->statut == 'termine') badge-success @elseif($echantillon->statut == 'réponse partielle') badge-warning @elseif($echantillon->statut == 'un rendez-vous') badge-info @elseif($echantillon->statut == 'pas de réponse') badge-secondary @elseif($echantillon->statut == 'refus') badge-danger @elseif($echantillon->statut == 'introuvable') badge-dark @else badge-primary @endif">
                                                 {{ $echantillon->statut == 'répondu' ? 'تم الرد' : ($echantillon->statut == 'termine' ? 'مكتمل' : ($echantillon->statut == 'réponse partielle' ? 'رد جزئي' : ($echantillon->statut == 'un rendez-vous' ? 'موعد' : ($echantillon->statut == 'pas de réponse' ? 'لا رد' : ($echantillon->statut == 'refus' ? 'رفض' : ($echantillon->statut == 'introuvable' ? 'غير موجود' : 'في الانتظار')))))) }}
@@ -100,6 +124,9 @@
                                         </li>
                                         <li class="list-group-item"><strong>⭐ الأولوية:</strong> {{ $echantillon->priorite ?? 'غير محددة' }}</li>
                                         <li class="list-group-item"><strong>🆔 رقم العينة:</strong> #{{ $echantillon->id }}</li>
+                                        {{-- Optionnel: Afficher les timestamps si besoin --}}
+                                        {{-- <li class="list-group-item"><strong>⏳ تاريخ الإنشاء:</strong> {{ $echantillon->entreprise->created_at ? $echantillon->entreprise->created_at->format('d/m/Y H:i') : 'غير متوفر' }}</li> --}}
+                                        {{-- <li class="list-group-item"><strong>🔄 تاريخ آخر تحديث:</strong> {{ $echantillon->entreprise->updated_at ? $echantillon->entreprise->updated_at->format('d/m/Y H:i') : 'غير متوفر' }}</li> --}}
                                     </ul>
                                 </div>
                             </div>
@@ -1164,7 +1191,7 @@ if (btnSubmitNouvelleSuivi) {
                 // btnConfirmerCauseSuivi.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
 
                 try {
-                    const response = await fetch('{{ route('relances.store') }}', {
+                    const response = await fetch('{{ route('suivis.store') }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

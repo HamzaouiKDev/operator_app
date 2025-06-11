@@ -11,32 +11,32 @@
 
     <style>
         body {
-            background-color: #f8f9fa; 
-            font-family: 'Cairo', 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-            color: #333; 
+            background-color: #f8f9fa;
+            font-family: 'Cairo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
         }
 
         .breadcrumb-header {
             background-color: #ffffff !important;
-            border-bottom: 1px solid #dee2e6; 
+            border-bottom: 1px solid #dee2e6;
             padding-top: 15px;
             padding-bottom: 15px;
         }
         .main-content-title, .breadcrumb-header p {
-            color: #212529 !important; 
+            color: #212529 !important;
         }
         .main-dashboard-header-right h5 {
-            color: #0069d9 !important; 
-            font-weight: 700; 
+            color: #0069d9 !important;
+            font-weight: 700;
         }
         .main-dashboard-header-right label {
-            color: #5a6268 !important; 
+            color: #5a6268 !important;
         }
 
         .card-rdv {
-            border: 1px solid #e3e6f0; 
-            border-radius: 0.75rem; 
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.07) !important; 
+            border: 1px solid #e3e6f0;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.07) !important;
             transition: all 0.3s ease-in-out;
             margin-bottom: 30px;
         }
@@ -46,19 +46,19 @@
         }
 
         .card-header-custom {
-            background-color: #007bff; 
+            background-color: #007bff;
             color: white;
-            border-top-left-radius: calc(0.75rem - 1px); 
+            border-top-left-radius: calc(0.75rem - 1px);
             border-top-right-radius: calc(0.75rem - 1px);
             padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid rgba(0,0,0,0.075); 
+            border-bottom: 1px solid rgba(0,0,0,0.075);
         }
         .card-header-custom .card-title {
-            font-size: 1.5rem; 
+            font-size: 1.5rem;
             font-weight: 600;
         }
         .card-header-custom .card-title i {
-            margin-left: 10px; 
+            margin-left: 10px; /* Ajusté pour RTL, devrait être margin-right si le texte est à gauche de l'icône */
         }
 
 
@@ -69,21 +69,19 @@
             border-bottom-right-radius: calc(0.75rem - 1px);
         }
 
-        /* --- AMÉLIORATION DE L'EN-TÊTE DU TABLEAU (TITRES PLUS GRANDS ET JOLIE COULEUR) --- */
         .table-rdv thead th {
-            background-color: #ffffff;    /* Fond blanc, se fond avec le corps de la carte */
-            color: #007bff;             /* ✅ JOLIE COULEUR: Texte en bleu primaire */
-            font-weight: 700;            /* Gras pour l'importance */
-            text-transform: uppercase;   /* Texte en majuscules pour un style d'en-tête distinct */
-            font-size: 0.9rem;           /* ✅ PLUS GRAND: Taille de police augmentée */
-            letter-spacing: 0.05em;      /* Espacement des lettres pour la lisibilité */
-            padding: 1.1rem 1.25rem;     /* Padding ajusté pour la nouvelle taille */
-            text-align: right;           /* Maintenir l'alignement RTL */
-            border-top: none;            /* Pas de bordure en haut */
-            border-bottom: 3px solid #007bff; /* Bordure inférieure accentuée avec la couleur primaire */
-            white-space: nowrap;         /* Empêcher le texte de passer à la ligne si possible */
+            background-color: #ffffff;
+            color: #007bff;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            padding: 1.1rem 1.25rem;
+            text-align: right;
+            border-top: none;
+            border-bottom: 3px solid #007bff;
+            white-space: nowrap;
         }
-        /* --- FIN AMÉLIORATION --- */
 
         .table-rdv tbody tr {
             transition: background-color 0.15s ease-in-out;
@@ -97,7 +95,7 @@
             cursor: pointer;
         }
         .table-rdv td {
-            padding: 0.9rem 1.25rem; 
+            padding: 0.9rem 1.25rem;
             vertical-align: middle;
             color: #3e5569;
             font-size: 0.875rem;
@@ -111,24 +109,35 @@
             color: #0062cc;
         }
         .table-rdv .company-name i {
-            margin-left: 8px; 
+            margin-left: 8px; /* Ajusté pour RTL */
             color: #007bff;
         }
 
         .search-form .form-control {
-            border-radius: 0.375rem 0 0 0.375rem !important;
+            /* border-radius: 0.375rem 0 0 0.375rem !important; */ /* Original pour LTR */
+            /* border-radius: 0 0.375rem 0.375rem 0 !important; */ /* Adapté pour RTL - Supprimé car le bouton n'est pas groupé directement */
             border: 1px solid #ced4da;
-            border-left: none;
+            /* border-left: none; */ /* Original pour LTR */
+            /* border-right: none; */ /* Adapté pour RTL - Supprimé */
         }
+        /* Si le bouton de filtre était groupé avec l'input de recherche, ce style serait pertinent.
+           Actuellement, le bouton est dans une colonne séparée.
         .search-form .btn-info {
-            border-radius: 0 0.375rem 0.375rem 0 !important;
+            border-radius: 0.375rem 0 0 0.375rem !important;
             background-color: #17a2b8;
             border-color: #17a2b8;
             padding: 0.5rem 1rem;
         }
-        .search-form .btn-info i {
-            margin-left: 5px;
+        */
+        .search-form .form-label {
+            display: block; /* Pour que le label prenne toute la largeur */
+            margin-bottom: .5rem;
+            text-align: right;
         }
+        .search-form .btn-info i { /* Style pour l'icône dans le bouton de filtre */
+            margin-right: 5px; /* Ajusté pour RTL */
+        }
+
 
         .empty-state-rdv {
             background-color: #fff;
@@ -152,9 +161,10 @@
             font-size: 0.9rem;
             display: flex;
             align-items: center;
+            text-align: right; /* Assurer l'alignement du texte à droite */
         }
         .alert-custom i {
-            margin-left: 10px;
+            margin-left: 10px; /* Icône à droite du texte en RTL */
             font-size: 1.2rem;
         }
         .alert-success-custom { background-color: #e0f2f1 !important; border-color: #b2dfdb !important; color: #004d40 !important; }
@@ -175,14 +185,13 @@
             color: #0056b3;
             background-color: #e9ecef;
         }
-         .text-muted small, small.text-muted {
+        .text-muted small, small.text-muted {
             color: #8898aa !important;
         }
     </style>
 @endsection
 
 @section('page-header')
-    {{-- L'en-tête de page reste identique à la version précédente --}}
     <div class="breadcrumb-header justify-content-between">
         <div class="left-content">
             <div>
@@ -198,16 +207,15 @@
 @endsection
 
 @section('content')
-    {{-- La section content reste identique à la version précédente --}}
     <div class="container-fluid" dir="rtl">
         @if (session('success'))
             <div class="alert alert-success-custom mg-b-20 text-right auto-hide alert-custom" role="alert">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                {{ session('success') }} <i class="fas fa-check-circle"></i>
             </div>
         @endif
         @if (session('error'))
             <div class="alert alert-danger-custom mg-b-20 text-right auto-hide alert-custom" role="alert">
-                <i class="fas fa-times-circle"></i> {{ session('error') }}
+                {{ session('error') }} <i class="fas fa-times-circle"></i>
             </div>
         @endif
 
@@ -215,29 +223,64 @@
             <div class="col-lg-12">
                 <div class="card card-rdv">
                     <div class="card-header card-header-custom text-center">
-                        <h4 class="card-title mg-b-0"><i class="fas fa-calendar-alt"></i> مواعيدي</h4>
+                        <h4 class="card-title mg-b-0">مواعيـدي <i class="fas fa-calendar-alt"></i></h4>
                     </div>
-                    <div class="card-body card-body-custom text-right">
+                    <div class="card-body card-body-custom">
+                        {{-- Formulaire de recherche et de filtre par date --}}
                         <form method="GET" action="{{ route('rendezvous.index') }}" class="mb-4 search-form">
-                            <div class="input-group">
-                                <input type="text" name="search_entreprise" class="form-control" placeholder="البحث عن شركة..." value="{{ request('search_entreprise') }}" aria-label="البحث عن شركة">
-                                <div class="input-group-append">
-                                    <button class="btn btn-info" type="submit">
-                                        <i class="fas fa-search"></i> بحث
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="date_debut" class="form-label">من تاريخ:</label>
+                                    <input type="date" name="date_debut" id="date_debut" class="form-control form-control-sm" value="{{ request('date_debut') }}">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="date_fin" class="form-label">إلى تاريخ:</label>
+                                    <input type="date" name="date_fin" id="date_fin" class="form-control form-control-sm" value="{{ request('date_fin') }}">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="search_entreprise_input" class="form-label">البحث عن شركة:</label>
+                                    {{-- L'input group est conservé pour un style cohérent même si le bouton est séparé --}}
+                                    <div class="input-group">
+                                        <input type="text" name="search_term" id="search_entreprise_input" class="form-control form-control-sm" placeholder="اسم الشركة..." value="{{ request('search_term') }}" aria-label="البحث عن شركة">
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3 d-flex align-items-end">
+                                    <button class="btn btn-info btn-sm w-100" type="submit">
+                                        <i class="fas fa-filter"></i> تصفية
                                     </button>
                                 </div>
                             </div>
+                             {{-- Bouton pour réinitialiser les filtres --}}
+                            @if(request('search_term') || request('date_debut') || request('date_fin'))
+                            <div class="row mt-2">
+                                <div class="col-12 text-center">
+                                    <a href="{{ route('rendezvous.index') }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-times"></i> مسح جميع المرشحات
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
                         </form>
 
-                        @if(request('search_entreprise') && (!isset($rendezVous) || $rendezVous->isEmpty()))
+                        @if( (request('search_term') || request('date_debut') || request('date_fin')) && $rendezVous->isEmpty())
                             <div class="alert alert-warning-custom text-right mt-3 alert-custom" role="alert">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                لم يتم العثور على مواعيد لشركات تطابق بحثك عن: "{{ request('search_entreprise') }}".
-                                <a href="{{ route('rendezvous.index') }}" class="alert-link" style="text-decoration: underline;">إظهار كافة المواعيد</a>.
+                                لم يتم العثور على مواعيد تطابق معايير البحث الخاصة بك.
+                                @if(request('search_term'))
+                                 <br><small>بحث الشركة: "{{ request('search_term') }}"</small>
+                                @endif
+                                {{-- CORRECTION : Vérifier si la date existe avant de la parser avec Carbon --}}
+                                @if(request('date_debut'))
+                                 <br><small>من تاريخ: {{ \Carbon\Carbon::parse(request('date_debut'))->format('d/m/Y') }}</small>
+                                @endif
+                                @if(request('date_fin'))
+                                 <br><small>إلى تاريخ: {{ \Carbon\Carbon::parse(request('date_fin'))->format('d/m/Y') }}</small>
+                                @endif
+                                <br><a href="{{ route('rendezvous.index') }}" class="alert-link" style="text-decoration: underline;">إظهار كافة المواعيد</a>.
                             </div>
                         @endif
 
-                        @if(isset($rendezVous) && $rendezVous->isNotEmpty())
+                        @if($rendezVous->isNotEmpty())
                             <div class="table-responsive">
                                 <table class="table table-hover mg-b-0 text-md-nowrap table-rdv">
                                     <thead>
@@ -274,10 +317,11 @@
 
                             @if ($rendezVous->hasPages())
                                 <div class="d-flex justify-content-center mt-4">
-                                    {{ $rendezVous->links('pagination::bootstrap-4') }}
+                                    {{-- appends(request()->query()) pour conserver tous les filtres dans la pagination --}}
+                                    {{ $rendezVous->appends(request()->query())->links('pagination::bootstrap-4') }}
                                 </div>
                             @endif
-                        @elseif(!request('search_entreprise'))
+                        @elseif(!request('search_term') && !request('date_debut') && !request('date_fin'))
                             <div class="empty-state-rdv">
                                 <i class="fas fa-calendar-times"></i>
                                 <p>لا توجد مواعيد مسجلة في الوقت الحالي.</p>
@@ -291,9 +335,9 @@
 @endsection
 
 @section('js')
-    {{-- Le JavaScript reste identique à la version précédente --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Auto-hide alerts
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.auto-hide');
                 alerts.forEach(alert => {
@@ -313,7 +357,14 @@
                         }, 50);
                     }
                 });
-            }, 4000);
+            }, 4000); // Délai avant de commencer à faire disparaître
+
+            // Optionnel: Amélioration pour le date picker si vous en ajoutez un plus tard
+            // Par exemple, avec Flatpickr:
+            // flatpickr("input[type=date]", {
+            // dateFormat: "Y-m-d",
+            // locale: "ar" // Si vous avez la localisation arabe pour flatpickr
+            // });
         });
     </script>
 @endsection

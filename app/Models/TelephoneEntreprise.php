@@ -5,6 +5,36 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property int $entreprise_id
+ * @property int|null $contact_id
+ * @property string $numero
+ * @property string|null $source
+ * @property bool $est_primaire
+ * @property string|null $etat_verification Statut de vérification du numéro: valide, faux_numero, pas_programme, ne_pas_deranger, non_verifie
+ * @property \Illuminate\Support\Carbon|null $derniere_verification_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\ContactEntreprise|null $contact
+ * @property-read \App\Models\Entreprise $entreprise
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereContactId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereDerniereVerificationAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereEntrepriseId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereEstPrimaire($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereEtatVerification($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereNumero($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereSource($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TelephoneEntreprise whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class TelephoneEntreprise extends Model
 {
     use HasFactory;

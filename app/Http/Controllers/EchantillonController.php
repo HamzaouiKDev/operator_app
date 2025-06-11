@@ -27,7 +27,14 @@ class EchantillonController extends Controller
         }
         Log::info("[EchantillonController@index] Utilisateur connecté: #{$user->id} - {$user->name}");
 
+        // Charger l'échantillon actuel avec toutes les relations nécessaires pour la vue
         $echantillonActuel = EchantillonEnquete::where('utilisateur_id', $user->id)
+            ->with([
+                'entreprise.telephones', 
+                'entreprise.contacts', 
+                'entreprise.emails', 
+                'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
+            ])
             ->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->first();
@@ -37,15 +44,10 @@ class EchantillonController extends Controller
             return $this->attribuerNouvelEchantillon($user, false);
         }
 
-        // S'assurer que les relations sont chargées pour l'affichage
-        $echantillonActuel->loadMissing([
-            'entreprise.telephones',
-            'entreprise.contacts',
-            'entreprise.emails'
-        ]);
-
         $nomEntreprise = optional($echantillonActuel->entreprise)->nom_entreprise ?? 'N/A';
         Log::info("[EchantillonController@index] Affichage de l'échantillon actuel #{$echantillonActuel->id} pour l'utilisateur #{$user->id}. Entreprise: {$nomEntreprise}");
+
+        // Passer l'échantillon déjà chargé à afficherAvecStatistiques pour éviter une surcharge inutile
         return $this->afficherAvecStatistiques($echantillonActuel, $user->id);
     }
 
@@ -63,16 +65,11 @@ class EchantillonController extends Controller
         $user = Auth::user();
         Log::info("[EchantillonController@next] Bouton 'Suivant' cliqué par Utilisateur: #{$user->id} ({$user->name}). L'échantillon actuel (s'il existe) NE SERA PAS libéré.");
 
-        // La logique de libération de l'échantillon précédent est supprimée.
-        // L'utilisateur conserve ses échantillons précédents et un nouveau lui est attribué si disponible.
-
         // attribuerNouvelEchantillon gère sa propre transaction et la redirection avec message de succès/erreur.
-        // Le `true` indique qu'il doit afficher un message flash lors de la redirection.
-        // Cette méthode va chercher un échantillon avec utilisateur_id = null et l'assigner à l'utilisateur.
-        return $this->attribuerNouvelEchantillon($user, true); 
+        return $this->attribuerNouvelEchantillon($user, true);
     }
 
-      /**
+    /**
      * **MÉTHODE PRINCIPALE** : Attribution d'un nouvel échantillon
      */
     private function attribuerNouvelEchantillon($user, $afficherMessage = false)
@@ -100,23 +97,26 @@ class EchantillonController extends Controller
             $maintenant = now();
             $updated = DB::table('echantillons_enquetes')
                 ->where('id', $echantillonDisponible->id)
-                // Double vérification pour s'assurer qu'il est toujours non assigné (au cas où lockForUpdate ne serait pas suffisant ou mal configuré)
-                ->whereNull('utilisateur_id') 
+                ->whereNull('utilisateur_id') // Double vérification
                 ->update([
                     'utilisateur_id' => $user->id,
                     'statut' => 'en attente', // Statut initial lors de l'attribution
-                    'updated_at' => $maintenant 
+                    'updated_at' => $maintenant
                 ]);
 
             if ($updated) {
                 Log::info("[attribuerNouvelEchantillon] ✅ Échantillon #{$echantillonDisponible->id} attribué avec succès à Utilisateur #{$user->id}");
+                // Charger le modèle Eloquent avec les relations nécessaires APRÈS la mise à jour
                 $nouvelEchantillon = EchantillonEnquete::with([
-                    'entreprise', 'entreprise.telephones', 'entreprise.contacts', 'entreprise.emails'
+                    'entreprise.telephones', 
+                    'entreprise.contacts', 
+                    'entreprise.emails', 
+                    'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
                 ])->find($echantillonDisponible->id);
 
                 if (!$nouvelEchantillon) { // Sécurité
-                    Log::error("[attribuerNouvelEchantillon]  критична помилка: Не вдалося знайти новопризначений зразок #{$echantillonDisponible->id} після оновлення.");
-                     return redirect()->route('echantillons.index')->with('error', 'حدث خطأ داخلي أثناء محاولة عرض العينة الجديدة.');
+                    Log::error("[attribuerNouvelEchantillon] Erreur critique: Impossible de trouver l'échantillon nouvellement assigné #{$echantillonDisponible->id} après mise à jour.");
+                    return redirect()->route('echantillons.index')->with('error', 'حدث خطأ داخلي أثناء محاولة عرض العينة الجديدة.');
                 }
 
                 if ($afficherMessage) {
@@ -126,12 +126,10 @@ class EchantillonController extends Controller
                 }
             } else {
                 Log::error("[attribuerNouvelEchantillon] ❌ Échec de la mise à jour (attribution) pour échantillon #{$echantillonDisponible->id}. Peut-être déjà pris ?");
-                // L'échantillon a pu être pris par un autre processus entre le `first()` et le `update()`
-                // Réessayer ou informer l'utilisateur
                 if ($afficherMessage) {
                     return redirect()->route('echantillons.index')->with('error', 'لم يتم العثور على عينة متاحة، ربما تم تخصيصها للتو. يرجى المحاولة مرة أخرى.');
                 } else {
-                     return $this->afficherSansEchantillon($user->id, 'لم يتم العثور على عينة متاحة، ربما تم تخصيصها للتو. يرجى المحاولة مرة أخرى.');
+                    return $this->afficherSansEchantillon($user->id, 'لم يتم العثور على عينة متاحة، ربما تم تخصيصها للتو. يرجى المحاولة مرة أخرى.');
                 }
             }
         });
@@ -146,27 +144,42 @@ class EchantillonController extends Controller
         $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['répondu', 'termine'])->where('utilisateur_id', $userId)->count();
         $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $userId)->count();
 
+        // Les JSONs doivent être vides si aucun échantillon
+        $echantillonEntrepriseIdJson = json_encode(null);
+        $echantillonEntrepriseTelephonesJson = json_encode([]);
+        $echantillonContactsJson = json_encode([]);
+
         return view('index', [
             'echantillon' => null,
             'nombreEntreprisesRepondues' => $nombreEntreprisesRepondues,
             'nombreEntreprisesAttribuees' => $nombreEntreprisesAttribuees,
             'error' => $messageArabe,
             'peutLancerAppel' => false,
-            'echantillonEntrepriseIdJson' => json_encode(null),
-            'echantillonEntrepriseTelephonesJson' => json_encode([]),
-            'echantillonContactsJson' => json_encode([]),
+            'echantillonEntrepriseIdJson' => $echantillonEntrepriseIdJson,
+            'echantillonEntrepriseTelephonesJson' => $echantillonEntrepriseTelephonesJson,
+            'echantillonContactsJson' => $echantillonContactsJson,
         ]);
     }
 
     /**
      * Méthode principale pour afficher un échantillon et préparer les données pour la vue.
+     * @param \App\Models\EchantillonEnquete $echantillon L'instance de l'échantillon (doit déjà être chargée avec les relations)
      */
     private function afficherAvecStatistiques($echantillon, $userId)
     {
+        // Les statistiques sont calculées indépendamment de l'échantillon spécifique
         $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['répondu', 'termine'])->where('utilisateur_id', $userId)->count();
         $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $userId)->count();
 
-        $echantillon->loadMissing(['entreprise.telephones', 'entreprise.contacts', 'entreprise.emails']);
+        // Les relations de l'échantillon passé en paramètre DOIVENT déjà être chargées
+        // Si elles ne l'étaient pas (ex: appel direct de cette méthode sans eager loading préalable),
+        // loadMissing les chargera.
+        $echantillon->loadMissing([
+            'entreprise.telephones', 
+            'entreprise.contacts', 
+            'entreprise.emails', 
+            'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
+        ]); 
 
         $nomEntreprise = optional($echantillon->entreprise)->nom_entreprise ?? 'N/A';
         Log::info("[afficherAvecStatistiques] Préparation de l'affichage pour Échantillon #{$echantillon->id} (Entreprise: {$nomEntreprise}) pour Utilisateur #{$userId}.");
@@ -178,6 +191,7 @@ class EchantillonController extends Controller
         if ($echantillon->entreprise) {
             $entrepriseIdForJs = $echantillon->entreprise->id;
 
+            // Mapping des téléphones
             if ($echantillon->entreprise->telephones) {
                 $entrepriseTelephonesForJs = $echantillon->entreprise->telephones->map(function ($tel) {
                     return [
@@ -186,15 +200,20 @@ class EchantillonController extends Controller
                         'source' => $tel->source,
                         'est_primaire' => $tel->est_primaire,
                         'etat_verification' => $tel->etat_verification,
-                        'contact_id' => $tel->contact_id
+                        'contact_id' => $tel->contact_id // Garder si pertinent pour le JS
                     ];
                 })->toArray();
             }
 
+            // Mapping des contacts
             if ($echantillon->entreprise->contacts) {
                 $contactsForJs = $echantillon->entreprise->contacts->map(function ($contact) use ($echantillon) {
                     $telEntrepriseRecord = null;
+                    // Optimisation: Si vous avez une relation `hasOne` ou `hasMany` pour le téléphone principal du contact
+                    // dans le modèle ContactEntreprise, utilisez-la ici au lieu de refaire une requête.
                     if ($contact->telephone && trim($contact->telephone) !== '') {
+                        // Idéalement, cette recherche serait une relation Eloquent chargée
+                        // Pour l'instant, on laisse la requête si le modèle ContactEntreprise ne gère pas cette relation
                         $telEntrepriseRecord = TelephoneEntreprise::where('entreprise_id', $echantillon->entreprise->id)
                             ->where('numero', $contact->telephone)
                             ->orderByRaw('CASE WHEN contact_id = ? THEN 0 ELSE 1 END', [$contact->id])
@@ -214,6 +233,10 @@ class EchantillonController extends Controller
         } else {
             Log::warning("[afficherAvecStatistiques] L'échantillon #{$echantillon->id} n'a pas d'entreprise associée.");
         }
+
+        // Les emails ne sont pas utilisés dans le JS directement, mais si vous les mapiez comme les téléphones,
+        // vous le feriez ici. Pour l'instant, ils sont chargés mais pas mappés explicitement en JSON.
+        // $echantillonEntrepriseEmailsJson = $echantillon->entreprise->emails->toJson(); // si besoin
 
         return view('index', [
             'echantillon' => $echantillon,
@@ -282,7 +305,7 @@ class EchantillonController extends Controller
 
         Log::info("[demarrerAppel] User #{$user->id}, Éch ID: {$echantillonId}, TelDB ID: {$telephoneDbId}, Num: {$numeroAppele}, StatutNum: {$statutNumeroSelectionne}");
 
-        $echantillonPourAppel = EchantillonEnquete::with('entreprise')
+        $echantillonPourAppel = EchantillonEnquete::with('entreprise') // Vous pourriez ajouter 'entreprise.gouvernorat' ici aussi si vous en aviez besoin dans cette fonction
             ->where('id', $echantillonId)
             ->where('utilisateur_id', $user->id)
             ->first();
@@ -349,7 +372,7 @@ class EchantillonController extends Controller
                 'echantillon_enquete_id' => $echantillonPourAppel->id,
                 'utilisateur_id' => $user->id,
                 'heure_debut' => now(),
-                'heure_fin' => now(),
+                'heure_fin' => now(), // Sera mis à jour à la fin de l'appel
                 'statut' => 'en_cours',
                 'telephone_utilise_id' => $telephoneDbId,
                 'numero_compose' => $numeroAppele,
@@ -434,9 +457,14 @@ class EchantillonController extends Controller
             ->first();
 
         if ($appel) {
-            $nomEntreprise = EchantillonEnquete::where('id', $appel->echantillon_enquete_id)
-                ->with('entreprise')
-                ->first()->entreprise->nom_entreprise ?? 'N/A';
+            // Charger la relation entreprise pour obtenir le nom de l'entreprise.
+            // Ajouter la relation gouvernorat ici si jamais vous souhaitez l'afficher dans une alerte JS
+            // ou via un appel API à `appelEnCours`.
+            $echantillon = EchantillonEnquete::where('id', $appel->echantillon_enquete_id)
+                ->with(['entreprise', 'entreprise.gouvernorat']) // <-- AJOUTÉ: 'entreprise.gouvernorat'
+                ->first();
+
+            $nomEntreprise = optional($echantillon->entreprise)->nom_entreprise ?? 'N/A';
 
             $appelData = [
                 'id' => $appel->id,
@@ -498,9 +526,16 @@ class EchantillonController extends Controller
             return response()->json(['success' => false, 'message' => 'Utilisateur non authentifié.'], 401);
         }
 
+        // Charger la relation 'entreprise.gouvernorat' pour le modèle EchantillonEnquete
         $echantillon = EchantillonEnquete::where('utilisateur_id', $user->id)
-            ->with(['entreprise.telephones', 'entreprise.contacts', 'entreprise.emails'])
+            ->with([
+                'entreprise.telephones', 
+                'entreprise.contacts', 
+                'entreprise.emails', 
+                'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
+            ]) 
             ->orderBy('updated_at', 'desc')
+            ->orderBy('id', 'desc')
             ->first();
 
         if (!$echantillon) {
@@ -530,6 +565,7 @@ class EchantillonController extends Controller
         Log::info("[disponibles] Nombre d'échantillons disponibles: {$disponibles} pour Utilisateur #{$user->id}.");
         return response()->json(['success' => true, 'disponibles' => $disponibles]);
     }
+
     public function markAsRefused(Request $request, EchantillonEnquete $echantillon)
     {
         $user = Auth::user();
@@ -538,7 +574,7 @@ class EchantillonController extends Controller
             return response()->json(['success' => false, 'message' => 'Utilisateur non authentifié.'], 401);
         }
 
-        // Optionnel : Vérifier si l'échantillon appartient à l'utilisateur
+        // Vérifier si l'échantillon appartient à l'utilisateur
         if ($echantillon->utilisateur_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'Cet échantillon n\'est pas assigné à cet utilisateur.'], 403);
         }
@@ -552,6 +588,7 @@ class EchantillonController extends Controller
 
         return response()->json(['success' => true, 'message' => 'L\'échantillon a été marqué comme refusé avec succès.']);
     }
+
     /**
      * Affiche les détails d'un échantillon spécifique.
      *
@@ -568,20 +605,18 @@ class EchantillonController extends Controller
         Log::info("[EchantillonController@show] Demande d'affichage de l'échantillon #{$echantillon->id} par l'utilisateur #{$user->id}");
 
         // Vérification : L'utilisateur ne peut voir que les échantillons qui lui sont assignés.
-        // Vous pouvez ajuster cette logique si, par exemple, un admin peut tout voir.
         if ($echantillon->utilisateur_id !== $user->id) {
             Log::warning("[EchantillonController@show] Tentative d'accès non autorisé à l'échantillon #{$echantillon->id} par l'utilisateur #{$user->id}. L'échantillon est assigné à {$echantillon->utilisateur_id}.");
             return redirect()->route('echantillons.index')->with('error', "Vous n'êtes pas autorisé à voir les détails de cet échantillon.");
-            // Alternativement, pour une API ou une réponse plus directe:
-            // abort(403, "Vous n'êtes pas autorisé à voir les détails de cet échantillon.");
         }
 
-        // Charger les relations nécessaires si elles ne sont pas déjà chargées (par sécurité)
-        // afficherAvecStatistiques le fait aussi, mais une double vérification ne nuit pas.
+        // Charger les relations nécessaires si elles ne sont pas déjà chargées par Route Model Binding
+        // et inclure 'entreprise.gouvernorat'
         $echantillon->loadMissing([
             'entreprise.telephones',
             'entreprise.contacts',
-            'entreprise.emails'
+            'entreprise.emails',
+            'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
         ]);
         
         $nomEntreprise = optional($echantillon->entreprise)->nom_entreprise ?? 'N/A';
@@ -590,7 +625,4 @@ class EchantillonController extends Controller
         // Utiliser la méthode existante pour préparer et afficher la vue
         return $this->afficherAvecStatistiques($echantillon, $user->id);
     }
-
-
-
 }

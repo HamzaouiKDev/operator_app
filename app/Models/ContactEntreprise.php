@@ -5,6 +5,37 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory; // ⬅️ **AJOUTÉ**
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int $entreprise_id
+ * @property string|null $civilite
+ * @property string $prenom
+ * @property string $nom
+ * @property string|null $email
+ * @property string|null $telephone
+ * @property string|null $poste
+ * @property-read \App\Models\Entreprise $entreprise
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TelephoneEntreprise> $telephonesDetail
+ * @property-read int|null $telephones_detail_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereCivilite($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereEntrepriseId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereNom($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise wherePoste($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise wherePrenom($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereTelephone($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ContactEntreprise whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class ContactEntreprise extends Model
 {
     use HasFactory; // ⬅️ **AJOUTÉ**

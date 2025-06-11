@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
+        Schema::create('gouvernorats', function (Blueprint $table) {
+            $table->id(); // Colonne pour le code (ex: 42)
+            $table->string('nom'); // Colonne pour le nom (ex: "Kasserine")
             $table->timestamps();
         });
     }
@@ -22,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('gouvernorats');
     }
 };

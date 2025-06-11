@@ -13,7 +13,10 @@ return new class extends Migration
             $table->string('code_national');
             $table->string('nom_entreprise');
             $table->string('libelle_activite');
-            $table->string('gouvernorat');
+            
+            // La relation professionnelle
+            $table->foreignId('gouvernorat_id')->constrained('gouvernorats');
+            
             $table->string('numero_rue');
             $table->string('nom_rue');
             $table->string('ville');

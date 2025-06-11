@@ -29,42 +29,67 @@ class RendezVousController extends Controller
         }
 
         $user = Auth::user();
-        $searchTerm = $request->input('search_entreprise');
+
+        // Récupérer les valeurs des filtres depuis la requête
+        $searchTerm = $request->input('search_term');
+        $dateDebut = $request->input('date_debut');
+        $dateFin = $request->input('date_fin');
 
         $rendezVousQuery = RendezVous::where('utilisateur_id', $user->id)
             ->whereHas('echantillonEnquete.entreprise'); // S'assure que le RDV a un échantillon et une entreprise valides
 
+        // Filtrer par nom d'entreprise (si fourni)
         if ($searchTerm) {
             $rendezVousQuery->whereHas('echantillonEnquete.entreprise', function ($query) use ($searchTerm) {
                 $query->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
             });
         }
 
-        // Tri par proximité à l'heure actuelle
-        // NOTE: TIMESTAMPDIFF est pour MySQL. Adaptez pour d'autres BDD.
-        // Pour PostgreSQL: ->orderByRaw('ABS(EXTRACT(EPOCH FROM (heure_rdv - NOW()))) ASC')
-        // Pour SQL Server: ->orderByRaw('ABS(DATEDIFF(second, heure_rdv, GETDATE())) ASC')
+        // Filtrer par date de début (si fournie)
+        if ($dateDebut) {
+            try {
+                $parsedDateDebut = Carbon::parse($dateDebut)->startOfDay();
+                $rendezVousQuery->where('heure_rdv', '>=', $parsedDateDebut);
+            } catch (\Exception $e) {
+                Log::warning("[RendezVousController@index] Format de date_debut invalide: " . $dateDebut . " - Erreur: " . $e->getMessage());
+                // Optionnel: rediriger avec une erreur ou ignorer le filtre de date
+                // ou notifier l'utilisateur
+            }
+        }
+
+        // Filtrer par date de fin (si fournie)
+        if ($dateFin) {
+             try {
+                $parsedDateFin = Carbon::parse($dateFin)->endOfDay();
+                $rendezVousQuery->where('heure_rdv', '<=', $parsedDateFin);
+            } catch (\Exception $e) {
+                Log::warning("[RendezVousController@index] Format de date_fin invalide: " . $dateFin . " - Erreur: " . $e->getMessage());
+                // Optionnel: rediriger avec une erreur ou ignorer le filtre de date
+            }
+        }
+
+        // CORRECTION: Tri amélioré pour gérer les valeurs NULL de heure_rdv
+        // Met les RDVs avec heure_rdv NULL à la fin, puis trie les autres par proximité.
+        $rendezVousQuery->orderByRaw('CASE WHEN heure_rdv IS NULL THEN 1 ELSE 0 END ASC, ABS(TIMESTAMPDIFF(SECOND, heure_rdv, NOW())) ASC');
+
         $rendezVous = $rendezVousQuery
             ->with('echantillonEnquete.entreprise') // Charger les relations pour l'affichage
-            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, heure_rdv, NOW())) ASC') // ✅ CORRIGÉ: Tri par proximité
             ->paginate(10)
-            ->appends($request->except('page')); // Conserver les paramètres de recherche dans la pagination
+            ->appends($request->query()); // Conserver tous les paramètres de la requête dans la pagination (plus simple)
 
-        Log::info("[RendezVousController@index] Nombre de RDV trouvés pour Utilisateur ID {$user->id} (recherche: '{$searchTerm}'): " . $rendezVous->total());
+        Log::info("[RendezVousController@index] Nombre de RDV trouvés pour Utilisateur ID {$user->id} (recherche: '{$searchTerm}', debut: '{$dateDebut}', fin: '{$dateFin}'): " . $rendezVous->total());
 
-        // Les statistiques globales
+        // Les statistiques globales (votre logique existante)
         $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu'])
                                             ->where('utilisateur_id', $user->id)
                                             ->count();
         $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
                                             ->count();
 
-        // La variable $rendezVousGroupedByEntreprise n'est plus nécessaire pour la nouvelle vue indexRDV
-        return view('indexRDV', compact(
+        return view('indexRDV', compact( // Assurez-vous que le nom de la vue 'indexRDV' correspond à votre fichier blade
             'rendezVous',
             'nombreEntreprisesRepondues',
             'nombreEntreprisesAttribuees'
-            // 'searchTerm' // Si votre vue indexRDV.blade.php a besoin de $searchTerm explicitement
         ));
     }
 

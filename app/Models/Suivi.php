@@ -6,6 +6,30 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo; // Ajout pour le type hinting
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property int $echantillon_enquete_id
+ * @property int $utilisateur_id
+ * @property string|null $note
+ * @property string $cause_suivi
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\EchantillonEnquete $echantillonEnquete
+ * @property-read \App\Models\User $utilisateur
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi whereCauseSuivi($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi whereEchantillonEnqueteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi whereNote($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Suivi whereUtilisateurId($value)
+ * @mixin \Eloquent
+ */
 class Suivi extends Model
 {
     use HasFactory;

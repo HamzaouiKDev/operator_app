@@ -1,13 +1,31 @@
 ```blade
 @extends('layouts.master')
-
 @section('css')
-    <!-- Icones typcn pour un style amélioré -->
     <link href="{{ URL::asset('assets/plugins/iconfonts/plugin.css') }}" rel="stylesheet" />
-    <!-- Animation CSS pour les effets d'entrée -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet" />
-    <!-- Styles personnalisés pour les tableaux et cartes -->
     <style>
+        /* ... (vos autres styles .stat-table, .breadcrumb-header etc. restent inchangés) ... */
+
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            /* La couleur par défaut du texte dans stat-card n'est plus nécessaire ici si nous spécifions pour h6, h3, icon */
+            padding: 25px;
+        }
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+
+       .stat-icon {
+            font-size: 48px; /* MODIFIÉ : Augmenté de 40px à 48px. Vous pouvez ajuster cette valeur. */
+            margin-bottom: 10px; /* Conserve la marge inférieure */
+            opacity: 0.9;        /* Conserve l'opacité */
+            /* La couleur de l'icône est gérée par des règles plus spécifiques comme : */
+            /* .stat-card.stat-card-dark .stat-icon et .stat-card:not(.stat-card-dark) .stat-icon */
+        }
+        /* Styles pour les AUTRES cartes de statistiques (celles qui ne sont PAS .stat-card-dark) */
         .stat-table {
             width: 100%;
             margin-bottom: 20px;
@@ -17,11 +35,15 @@
             border-radius: 8px;
             overflow: hidden;
         }
+
+        /* MODIFICATION ICI pour les cellules des tableaux de statistiques */
         .stat-table th, .stat-table td {
-            padding: 12px 20px;
-            text-align: right;
+            padding: 15px 30px; /* Augmenté : 15px haut/bas, 30px gauche/droite pour plus d'espace */
+            text-align: center;  /* MODIFIÉ : Texte centré */
             border-bottom: 1px solid #eee;
+            vertical-align: middle; /* Assure un bon alignement vertical si le contenu a des hauteurs différentes */
         }
+
         .stat-table th {
             background-color: #f8f9fa;
             color: #2c3e50;
@@ -38,35 +60,27 @@
         .stat-table tr:hover {
             background-color: rgba(52, 152, 219, 0.05);
         }
-        .stat-card {
-            border: none;
-            border-radius: 15px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            color: #ffffff; /* Default text color for contrast */
-            padding: 25px;
+
+        /* Titres, icônes et chiffres tous en noir/gris foncé */
+
+        .stat-card:not(.stat-card-dark) h6 {       /* Titres des cartes générales */
+            color: #212529 !important;             /* Noir/gris foncé (était blanc) */
+            text-shadow: none;                     /* Enlever l'ombre si elle ne convient pas au texte noir */
         }
-        .stat-card h6 {
-            color: #ffffff !important; /* White for card headings */
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            font-weight: 600;
+
+        .stat-card:not(.stat-card-dark) .stat-icon { /* Icônes des cartes générales */
+            color: #212529 !important;             /* Noir/gris foncé (était blanc) */
+            opacity: 1;                            /* S'assurer qu'elles sont bien visibles */
         }
-        .stat-card h3 {
-            color: #2c3e50 !important; /* Dark color for numbers */
-            font-weight: 700;
+
+        .stat-card:not(.stat-card-dark) h3 {       /* Chiffres des cartes générales */
+            color: #212529 !important;             /* Noir/gris foncé (était #2c3e50, harmonisé) */
         }
+
+        /* Styles existants pour .main-dashboard-header-right h5 et .debug-message restent inchangés */
         .main-dashboard-header-right h5 {
             color: #2c3e50 !important; /* Dark color for header numbers */
             font-weight: 700;
-        }
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
-        }
-        .stat-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-            opacity: 0.9;
-            color: #ffffff; /* Ensure icons remain white */
         }
         .debug-message {
             color: #e74c3c;
@@ -77,6 +91,10 @@
             background-color: #ffe6e6;
             padding: 10px;
             border-radius: 5px;
+        }
+        .stat-cards-row > [class*="col-"] { /* Cible toutes les classes de colonnes directes de .stat-cards-row */
+            padding-left: 25px;  /* Augmentez cette valeur pour plus d'espace à gauche de la carte */
+            padding-right: 25px; /* Augmentez cette valeur pour plus d'espace à droite de la carte */
         }
     </style>
 @endsection
@@ -114,13 +132,13 @@
         @endif
 
         <!-- Statistiques rapides sous forme de cartes -->
-        <div class="row row-sm mb-5">
+        <div class="row row-sm mb-5 stat-cards-row">
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3 animate__animated animate__fadeInUp animate__delay-1s">
-                <div class="card text-center stat-card" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);">
-                    <i class="typcn typcn-calendar stat-icon"></i>
-                    <h6 class="tx-16 mg-b-5">إجمالي المواعيد</h6>
-                    <h3 class="tx-30 mg-b-0">{{ $totalRendezVous ?? '0' }}</h3>
-                </div>
+                        <div class="card text-center stat-card stat-card-dark"> {{-- IMPORTANT: Pas de style="background: ..." ici et stat-card-dark est présent --}}
+                            <i class="typcn typcn-calendar stat-icon"></i>
+                            <h6 class="tx-16 mg-b-5">إجمالي المواعيد</h6>
+                            <h3 class="tx-30 mg-b-0">{{ $totalRendezVous ?? '0' }}</h3>
+                        </div>
             </div>
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3 animate__animated animate__fadeInUp animate__delay-2s">
                 <div class="card text-center stat-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">

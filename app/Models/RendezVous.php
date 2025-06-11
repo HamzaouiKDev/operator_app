@@ -6,6 +6,34 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo; // Bonne pratique d'importer les types de relations
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property int $echantillon_enquete_id
+ * @property int $utilisateur_id
+ * @property \Illuminate\Support\Carbon $heure_rdv
+ * @property string $contact_rdv
+ * @property string $statut
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\EchantillonEnquete $echantillonEnquete
+ * @property-read \App\Models\User $utilisateur
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereContactRdv($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereEchantillonEnqueteId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereHeureRdv($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereStatut($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RendezVous whereUtilisateurId($value)
+ * @mixin \Eloquent
+ */
 class RendezVous extends Model
 {
     use HasFactory;
