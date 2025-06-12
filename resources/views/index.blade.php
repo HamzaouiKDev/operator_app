@@ -239,7 +239,19 @@
                                 <div class="table-responsive">
                                         <table class="table table-striped mg-b-0 text-md-nowrap"><thead><tr><th class="tx-14 fw-bold">البريد</th><th class="tx-14 fw-bold">المصدر</th><th class="tx-14 fw-bold">أساسي</th></tr></thead><tbody>
                                         @foreach($echantillon->entreprise->emails as $email)
-                                            <tr><td><strong style="font-size: 12px;">{{ $email->email }}</strong></td><td>{{ $email->source ?? 'غير محدد' }}</td><td>@if($email->est_primaire)<span class="badge badge-success">نعم</span>@else<span class="badge badge-secondary">لا</span>@endif</td></tr>
+                                            <tr><td>
+                            {{-- Le lien contient maintenant toutes les données nécessaires --}}
+                           <a href="#" class="clickable-email text-primary font-weight-bold"
+                               data-email="{{ $email->email }}"
+                               data-sujet="{{ $echantillon->enquete->titre_mail ?? 'Sujet par défaut' }}"
+                               data-corps="{{ $echantillon->enquete->corps_mail ?? '' }}"
+                               data-piecejointe="{{ $echantillon->enquete->piece_jointe_path ?? '' }}"
+                               style="text-decoration: none; word-break: break-all; font-size: 14px;">
+                                <i class="fas fa-paper-plane" style="margin-left: 8px;"></i>{{-- Icône d'envoi et espace --}}
+                                {{ $email->email }}
+                            </a>
+                        </td>
+<td>{{ $email->source ?? 'غير محدد' }}</td><td>@if($email->est_primaire)<span class="badge badge-success">نعم</span>@else<span class="badge badge-secondary">لا</span>@endif</td></tr>
                                         @endforeach
                                         </tbody></table>
                                 </div>
@@ -469,6 +481,51 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
 
 
     </div> {{-- Fin de .container-fluid --}}
+
+  {{-- ========================================================== --}}
+{{-- ======= NOUVELLE MODALE EN ARABE POUR L'ENVOI D'EMAIL ======= --}}
+{{-- ========================================================== --}}
+<div class="modal fade" id="sendEmailModal" tabindex="-1" role="dialog" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #007bff; color: white;">
+                {{-- Le titre est maintenant à droite --}}
+                <h5 class="modal-title" id="sendEmailModalLabel">إرسال بريد إلكتروني</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="sendEmailForm">
+                {{-- Ajout de dir="rtl" pour un affichage de droite à gauche --}}
+                <div class="modal-body text-right" dir="rtl">
+                    @csrf
+                    <input type="hidden" name="entreprise_id" id="sendEmailEntrepriseId">
+                    
+                    <div class="form-group">
+                        <label for="destinataire_email">**المستلم:**</label>
+                        <input type="email" class="form-control" id="destinataire_email" name="destinataire" readonly style="background-color: #e9ecef;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email_sujet">**الموضوع:**</label>
+                        <input type="text" class="form-control" id="email_sujet" name="sujet" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email_corps">**الرسالة:**</label>
+                        <textarea class="form-control" id="email_corps" name="corps" rows="8" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    {{-- Les boutons sont inversés pour un ordre logique en RTL --}}
+                    <button type="submit" id="sendEmailSubmitBtn" class="btn btn-primary">إرسال</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('js')
@@ -548,7 +605,7 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
 
         let echantillon_entreprise_id_js = {!! $echantillonEntrepriseIdJson ?? 'null' !!};
         let echantillonDataForModal = null; 
-
+         let emailPreselectionne = null; 
         @if(isset($echantillon) && $echantillon) // Initialiser seulement si $echantillon est défini
             echantillonDataForModal = {
                 entreprise: {
@@ -567,6 +624,17 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
         setTimeout(function() { const alerts = document.querySelectorAll('.auto-hide'); alerts.forEach(alert => { if (alert) { alert.style.transition = 'opacity 0.5s ease'; alert.style.opacity = '0'; setTimeout(() => alert.remove(), 500); }}); }, 5000);
         
         const disponiblesCountElement = document.getElementById('disponiblesCount');
+        // NOUVEAU : Gérer le clic sur un e-mail pour le présélectionner
+                document.body.addEventListener('click', function(e) {
+                    const link = e.target.closest('.clickable-email');
+                    if (link) {
+                        e.preventDefault();
+                        emailPreselectionne = link.dataset.email;
+                    }
+                });
+        
+        
+        
         function updateDisponiblesCount() { 
             if (!disponiblesCountElement) return; 
             fetch('{{ route("api.echantillons.disponibles") }}', { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken } })
@@ -1268,5 +1336,81 @@ if (btnSubmitNouvelleSuivi) {
         
 
     }); // Fin de DOMContentLoaded
+    // ===================================================================
+    // == DÉBUT : LOGIQUE CORRIGÉE ET FINALE POUR LA MODALE EMAIL ==
+    // ===================================================================
+
+    // Utilise jQuery pour écouter les clics sur les éléments avec la classe '.clickable-email'.
+    $(document).on('click', '.clickable-email', function(e) {
+        e.preventDefault(); // Empêche le lien de sauter en haut de la page.
+
+        // 1. Récupérer toutes les informations depuis les attributs data-* du lien cliqué.
+        const emailSelectionne = $(this).data('email');
+        const sujetPrecharge = $(this).data('sujet');
+        const corpsPrecharge = $(this).data('corps');
+        const pieceJointe = $(this).data('piecejointe');
+
+        // 2. Cibler la modale et ses champs de formulaire.
+        const modal = $('#sendEmailModal');
+        const champDestinataire = modal.find('#destinataire_email');
+        const champSujet = modal.find('#email_sujet');
+        const champCorps = modal.find('#email_corps');
+        const attachmentInfo = modal.find('#attachment-info');
+        
+        // 3. Remplir les champs avec les données récupérées.
+        champDestinataire.val(emailSelectionne);
+        champSujet.val(sujetPrecharge);
+        champCorps.val(corpsPrecharge);
+
+        // Mettre à jour l'ID de l'entreprise dans le formulaire
+        @if(isset($echantillon) && $echantillon->entreprise)
+            modal.find('#sendEmailEntrepriseId').val('{{ $echantillon->entreprise->id }}');
+        @endif
+
+        // Afficher les informations sur la pièce jointe
+        if (pieceJointe) {
+            attachmentInfo.html(`<i class="fas fa-paperclip"></i> ${pieceJointe}`);
+        } else {
+            attachmentInfo.html('<i>لا توجد مرفقات لهذه الحملة.</i>');
+        }
+
+        // 4. Ouvrir la modale (Bootstrap 4 via jQuery).
+        modal.modal('show'); 
+    });
+
+    // 5. Gérer la soumission du formulaire
+    $('#sendEmailForm').on('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = $('#sendEmailSubmitBtn');
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        
+        submitBtn.prop('disabled', true).html('إرسال...');
+
+        try {
+            const response = await fetch('{{ route("emails.send") }}', { // Assurez-vous que cette route existe
+                method: 'POST',
+                body: new FormData(this),
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showFeedback(result.message || 'تم إرسال البريد الإلكتروني بنجاح!', 'success');
+                $('#sendEmailModal').modal('hide');
+            } else {
+                showFeedback(result.message || 'حدث خطأ أثناء الإرسال.', 'danger');
+            }
+        } catch (error) {
+            showFeedback('خطأ في الشبكة. لا يمكن إرسال البريد الإلكتروني.', 'danger');
+        } finally {
+            submitBtn.prop('disabled', false).html('إرسال');
+        }
+    });
+
+    // ===================================================================
+    // == FIN : LOGIQUE MODALE EMAIL ==
+    // ===================================================================
+
 </script>
 @endsection

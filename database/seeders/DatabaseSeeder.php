@@ -17,66 +17,73 @@ use App\Models\RendezVous;
 use App\Models\Suivi;
 use App\Models\Appel;
 use App\Models\QuestionnaireEnquete;
-use App\Models\Gouvernorat; // <-- ESSENTIEL : Importe le modèle Gouvernorat
+use App\Models\Gouvernorat;
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Seed the application's database.
+     *
+     * @return void
+     */
     public function run(): void
     {
-        // On appelle d'abord les seeders de base en premier.
-        // GouvernoratSeeder DOIT être appelé avant de créer des entreprises.
+        // On appelle d'abord les seeders de base.
         $this->call([
             RolesAndUsersSeeder::class,
-            GouvernoratSeeder::class, // <-- ESSENTIEL : Appelle le seeder des gouvernorats pour qu'ils soient créés et remplis
+            GouvernoratSeeder::class,
         ]);
 
-        // On récupère SEULEMENT les téléopérateurs et les ID des gouvernorats existants
+        // On récupère les données essentielles
         $teleoperateurs = User::role('Téléopérateur')->get();
-        // <-- ESSENTIEL : Récupère les IDs des gouvernorats DE LA BASE DE DONNÉES
         $gouvernoratIds = Gouvernorat::pluck('id')->all();
 
-        // Si des données de base manquent, on arrête le seeding
-        if ($teleoperateurs->isEmpty()) {
-            $this->command->warn('Aucun téléopérateur trouvé. Vérifiez RolesAndUsersSeeder. Arrêt du seeding des données métier.');
-            return;
-        }
-        if (empty($gouvernoratIds)) { // <-- ESSENTIEL : Vérifie si des ID de gouvernorats ont été trouvés
-            $this->command->error('Aucun gouvernorat trouvé en base de données. Assurez-vous que GouvernoratSeeder a bien fonctionné. Arrêt du seeding.');
+        // Vérifications pour s'assurer que les données de base existent
+        if ($teleoperateurs->isEmpty() || empty($gouvernoratIds)) {
+            $this->command->error('Données de base manquantes (Téléopérateurs ou Gouvernorats). Assurez-vous que les seeders RolesAndUsersSeeder et GouvernoratSeeder ont bien fonctionné. Arrêt du seeding.');
             return;
         }
 
         $faker = Faker::create('fr_FR');
 
+        // Créer plusieurs enquêtes (servant de modèles d'emails)
+        $enquetes = collect(); // Crée une collection vide pour stocker nos enquêtes
+        for ($i = 0; $i < 4; $i++) {
+            $enquete = Enquete::create([
+                'titre' => 'Enquête ' . $faker->word . ' ' . ($i + 1),
+                'description' => $faker->paragraph,
+                'statut' => $faker->randomElement(['en_cours', 'planifiee']),
+                // --- Nouveaux champs pour les emails types ---
+                'titre_mail' => 'Information importante concernant : ' . $faker->sentence(3),
+                'corps_mail' => "Bonjour,\n\n" . $faker->realText(400) . "\n\nCordialement,\nL'équipe.",
+                'date_debut' => $faker->dateTimeBetween('-1 month', 'now'),
+                'date_fin' => $faker->dateTimeBetween('+1 month', '+2 months'),
+            ]);
+
+            // Ajoute l'enquête créée à notre collection
+            $enquetes->push($enquete);
+
+            // Créer des questionnaires pour chaque enquête
+            for ($j = 0; $j < rand(1, 3); $j++) {
+                QuestionnaireEnquete::create([
+                    'enquete_id' => $enquete->id,
+                    'titre' => $faker->sentence(3),
+                    'description' => $faker->paragraph
+                ]);
+            }
+        }
+        
         $libellesActivite = [
             'Conseil en gestion', 'Développement logiciel', 'Commerce de détail',
             'Fabrication industrielle', 'Services financiers', 'Transport et logistique',
             'Restauration', 'Santé et bien-être', 'Éducation et formation',
             'Construction', 'Marketing et publicité', 'Tourisme et hôtellerie'
         ];
-        // La liste $gouvernorats sous forme de tableau de chaînes de caractères n'est PLUS NÉCESSAIRE ici.
-        // Nous utilisons les IDs numériques récupérés de la base de données.
-        // $gouvernorats = ['Tunis', 'Ariana', ...];
         $statutsEchantillons = ['nouveau', 'en_attente', 'en_cours', 'termine', 'annule'];
         $causesSuivi = [
             'Réponse absente', 'Personne non adéquate', 'Rappel demandé par client',
             'Information manquante', 'Autre'
         ];
-
-        // Créer une seule enquête
-        $enquete = Enquete::create([
-            'titre' => $faker->sentence(4),
-            'description' => $faker->paragraph,
-            'date_debut' => $faker->dateTimeBetween('-1 month', 'now'),
-            'date_fin' => $faker->dateTimeBetween('now', '+1 month'),
-            'statut' => $faker->randomElement(['en_cours', 'terminee', 'planifiee'])
-        ]);
-        for ($j = 0; $j < rand(1, 3); $j++) {
-            QuestionnaireEnquete::create([
-                'enquete_id' => $enquete->id,
-                'titre' => $faker->sentence(3),
-                'description' => $faker->paragraph
-            ]);
-        }
 
         // Créer 30 entreprises
         for ($i = 0; $i < 30; $i++) {
@@ -84,7 +91,6 @@ class DatabaseSeeder extends Seeder
                 'code_national' => $faker->unique()->numerify('NAT-######'),
                 'nom_entreprise' => $faker->unique()->company,
                 'libelle_activite' => $faker->randomElement($libellesActivite),
-                // <-- ESSENTIEL : Utilise 'gouvernorat_id' et un ID NUMÉRIQUE du tableau $gouvernoratIds
                 'gouvernorat_id' => $faker->randomElement($gouvernoratIds),
                 'numero_rue' => $faker->buildingNumber,
                 'nom_rue' => $faker->streetName,
@@ -123,14 +129,16 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
+            // Attribuer l'entreprise à une enquête au hasard
             $echantillon = EchantillonEnquete::create([
                 'entreprise_id' => $entreprise->id,
-                'enquete_id' => $enquete->id,
+                'enquete_id' => $enquetes->random()->id, // <-- On utilise une enquête au hasard
                 'statut' => $faker->randomElement($statutsEchantillons),
                 'priorite' => $faker->randomElement(['basse', 'moyenne', 'haute'])
             ]);
 
-            for ($k = 0; $k < rand(1, 3); $k++) {
+            // Créer des rendez-vous, suivis et appels pour chaque échantillon
+            for ($k = 0; $k < rand(0, 2); $k++) {
                 RendezVous::create([
                     'echantillon_enquete_id' => $echantillon->id,
                     'utilisateur_id' => $teleoperateurs->random()->id,
@@ -140,7 +148,7 @@ class DatabaseSeeder extends Seeder
                     'notes' => $faker->optional()->paragraph
                 ]);
             }
-            for ($k = 0; $k < rand(1, 3); $k++) {
+            for ($k = 0; $k < rand(0, 3); $k++) {
                 Suivi::create([
                     'echantillon_enquete_id' => $echantillon->id,
                     'utilisateur_id' => $teleoperateurs->random()->id,
@@ -148,7 +156,7 @@ class DatabaseSeeder extends Seeder
                     'note' => $faker->optional()->paragraph
                 ]);
             }
-            for ($k = 0; $k < rand(1, 3); $k++) {
+            for ($k = 0; $k < rand(1, 5); $k++) {
                 $heureDebutAppel = $faker->dateTimeBetween('-1 month', 'now');
                 Appel::create([
                     'echantillon_enquete_id' => $echantillon->id,

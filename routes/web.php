@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Import des contrôleurs
+use App\Http\Controllers\MailController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\SuiviController;
 use App\Http\Controllers\ContactController;
@@ -121,6 +122,11 @@ Route::middleware(['auth'])->group(function () {
 
     });
 });
+
+/////////////////////////// Route pour l'envoi de mail
+
+// Cette route gère l'action d'envoyer l'e-mail
+Route::post('/emails/send', [MailController::class, 'sendEmailFromModal'])->name('emails.send');
 
 
 
