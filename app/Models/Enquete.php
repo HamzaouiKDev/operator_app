@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Enquete extends Model
 {
-    protected $table = 'enquetes';
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -17,20 +18,25 @@ class Enquete extends Model
         'titre',
         'description',
         'statut',
-        'titre_mail',
-        'corps_mail',
-        'piece_jointe_path', // <-- CHAMP AJOUTÉ
+        'titre_mail', // CORRIGÉ : Utilisation du bon nom de colonne
+        'corps_mail',  // CORRIGÉ : Utilisation du bon nom de colonne
+        'piece_jointe_path',
         'date_debut',
         'date_fin',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'date_debut' => 'date', // CORRIGÉ : 'date' au lieu de 'datetime'
+        'date_fin' => 'date',   // CORRIGÉ : 'date' au lieu de 'datetime'
     ];
 
     public function echantillons()
     {
         return $this->hasMany(EchantillonEnquete::class, 'enquete_id');
-    }
-
-    public function questionnaires()
-    {
-        return $this->hasMany(QuestionnaireEnquete::class, 'enquete_id');
     }
 }

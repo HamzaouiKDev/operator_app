@@ -13,8 +13,10 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\RendezVousController;
 use App\Http\Controllers\EchantillonController;
 use App\Http\Controllers\StatistiquesController;
+use App\Http\Controllers\Admin\EnqueteController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EntrepriseImportController;
+use App\Http\Controllers\Admin\EchantillonImportController;
 
 
 /*
@@ -64,6 +66,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/entreprises/import/store-telephones', [EntrepriseImportController::class, 'storeTelephones'])->name('entreprises.import.telephones');
         Route::post('/admin/entreprises/import/emails', [EntrepriseImportController::class, 'storeEmails'])->name('entreprises.import.emails');
         Route::post('/entreprises/import', [EntrepriseImportController::class, 'store'])->name('entreprises.import.store');
+         // AJOUT : ROUTES POUR L'IMPORT DES ÉCHANTILLONS
+        Route::get('/echantillons/import', [EchantillonImportController::class, 'create'])->name('echantillons.import.form');
+        Route::post('/echantillons/import', [EchantillonImportController::class, 'store'])->name('echantillons.import.store');
+        Route::resource('enquetes', EnqueteController::class);
 
     });
 
