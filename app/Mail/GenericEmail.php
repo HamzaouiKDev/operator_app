@@ -2,53 +2,71 @@
 
 namespace App\Mail;
 
+use App\Models\Entreprise;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Attachment;
 
 class GenericEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $sujet;
-    public $contenuMessage;
-    public $attachmentPaths; // Renommé pour accepter un tableau de chemins
+    // Les propriétés publiques sont automatiquement disponibles dans la vue Blade
+    public string $sujet;
+    public string $corps;
+    public ?Entreprise $entreprise;
+    public array $filesToAttach;
 
     /**
-     * Crée une nouvelle instance du message.
-     *
-     * @param string $sujet Le sujet de l'email.
-     * @param string $contenuMessage Le corps du message.
-     * @param array $attachmentPaths Un tableau de chemins publics vers les pièces jointes.
+     * Create a new message instance.
      */
-    public function __construct($sujet, $contenuMessage, array $attachmentPaths = [])
+    public function __construct(string $sujet, string $corps, array $filesToAttach = [], ?Entreprise $entreprise = null)
     {
         $this->sujet = $sujet;
-        $this->contenuMessage = $contenuMessage;
-        $this->attachmentPaths = $attachmentPaths;
+        $this->corps = $corps;
+        $this->entreprise = $entreprise;
+        $this->filesToAttach = $filesToAttach;
     }
 
     /**
-     * Construit le message.
-     *
-     * @return $this
+     * Get the message envelope.
      */
-    public function build()
+    public function envelope(): Envelope
     {
-        $email = $this->subject($this->sujet)
-                      ->view('emails.generic_template');
+        return new Envelope(
+            subject: $this->sujet,
+        );
+    }
 
-        // ** LOGIQUE MISE À JOUR POUR PLUSIEURS PIÈCES JOINTES **
-        // Si le tableau de pièces jointes n'est pas vide...
-        if (!empty($this->attachmentPaths)) {
-            // ... on boucle sur chaque chemin de fichier...
-            foreach ($this->attachmentPaths as $filePath) {
-                // ... et on attache chaque fichier à l'e-mail.
-                $email->attach(public_path($filePath));
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.generic_template',
+        );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        $attachments = [];
+
+        foreach ($this->filesToAttach as $filePath) {
+            $fullPath = public_path($filePath);
+            if (file_exists($fullPath)) {
+                $attachments[] = Attachment::fromPath($fullPath);
             }
         }
 
-        return $email;
+        return $attachments;
     }
 }

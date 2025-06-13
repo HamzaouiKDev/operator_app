@@ -61,7 +61,9 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserController::class);
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/entreprises/import', [EntrepriseImportController::class, 'create'])->name('entreprises.import.form');
-    Route::post('/entreprises/import', [EntrepriseImportController::class, 'store'])->name('entreprises.import.store');
+        Route::post('/entreprises/import/store-telephones', [EntrepriseImportController::class, 'storeTelephones'])->name('entreprises.import.telephones');
+        Route::post('/admin/entreprises/import/emails', [EntrepriseImportController::class, 'storeEmails'])->name('entreprises.import.emails');
+        Route::post('/entreprises/import', [EntrepriseImportController::class, 'store'])->name('entreprises.import.store');
 
     });
 

@@ -3,15 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\EmailEntreprise; // Ajout nécessaire pour l'import des emails
 use App\Models\Entreprise;
-use App\Models\Gouvernorat;
+use App\Models\TelephoneEntreprise;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Throwable;
 
 class EntrepriseImportController extends Controller
 {
     /**
-     * Affiche la page avec le formulaire pour uploader le fichier.
+     * Affiche la page d'importation avec les formulaires.
      */
     public function create()
     {
@@ -19,99 +22,227 @@ class EntrepriseImportController extends Controller
     }
 
     /**
-     * Traite le fichier Excel uploadé pour créer les entreprises.
+     * Traite le fichier Excel des entreprises.
      */
     public function store(Request $request)
     {
-        // 1. Validation du fichier
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240' // Max 10MB
-        ]);
+        // Validation spécifique pour le formulaire des entreprises
+        $request->validate(['file-entreprises' => 'required|mimes:xlsx,xls,csv|max:20480']);
 
-        $file = $request->file('file');
-        $importedCount = 0;
+        $file = $request->file('file-entreprises');
+        $dataToImport = [];
         $skippedCount = 0;
+        $processedRowCount = 0;
+        $totalUpsertedCount = 0;
+
+        if (!defined('IMPORT_CHUNK_SIZE')) {
+            define('IMPORT_CHUNK_SIZE', 500);
+        }
 
         try {
-            // 2. On charge le fichier avec la librairie PhpSpreadsheet
             $spreadsheet = IOFactory::load($file->getRealPath());
             $worksheet = $spreadsheet->getActiveSheet();
-
             $header = [];
-            // On lit la première ligne (ligne 1) pour récupérer les en-têtes
             foreach ($worksheet->getRowIterator(1, 1) as $row) {
                 $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(FALSE);
+                $cellIterator->setIterateOnlyExistingCells(false);
                 foreach ($cellIterator as $cell) {
                     $header[] = strtolower(trim($cell->getValue()));
                 }
             }
 
-            // ANCIEN : Pas besoin de charger tous les gouvernorats par nom.
-            // NOUVEAU : Optionnel, charger les IDs existants pour une validation plus robuste
-            // $existingGouvernoratIds = Gouvernorat::pluck('id')->all();
+            $updateColumns = [
+                'nom_entreprise', 'code_national', 'libelle_activite',
+                'gouvernorat_id', 'ville', 'numero_rue', 'nom_rue',
+                'statut', 'adresse_cnss', 'localite_cnss'
+            ];
 
-            // 3. On parcourt toutes les autres lignes (à partir de la ligne 2)
             foreach ($worksheet->getRowIterator(2) as $row) {
                 $rowData = [];
                 $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(FALSE);
+                $cellIterator->setIterateOnlyExistingCells(false);
                 foreach ($cellIterator as $cell) {
                     $rowData[] = $cell->getValue();
                 }
-
                 $rowAssoc = array_combine($header, array_pad($rowData, count($header), null));
+                $processedRowCount++;
 
-                if (empty($rowAssoc['rs'])) {
+                $entident = $rowAssoc['entident'] ?? null;
+                if (empty($entident) || empty($rowAssoc['rs'])) {
                     $skippedCount++;
                     continue;
                 }
 
-                // --- MODIFICATION CRUCIALE ICI ---
-                // Le code du gouvernorat est directement dans la colonne 'gouvernorat_2023'
-                $gouvernoratCodeFromExcel = trim($rowAssoc['gouvernorat_2023'] ?? '');
+                $dataToImport[] = [
+                    'id'               => $entident,
+                    'nom_entreprise'   => $rowAssoc['rs'],
+                    'code_national'    => $rowAssoc['nat09_2023'],
+                    'libelle_activite' => $rowAssoc['activite'] ?? 'Non spécifié',
+                    'gouvernorat_id'   => (int) ($rowAssoc['gouvernorat_2023'] ?? 0),
+                    'ville'            => $rowAssoc['ville'] ?? 'Non spécifié',
+                    'numero_rue'       => $rowAssoc['rue_r'] ?? null,
+                    'nom_rue'          => $rowAssoc['rue_r'] ?? null,
+                    'statut'           => $rowAssoc['statut_2023'] ?? 'active',
+                    'adresse_cnss'     => $rowAssoc['adresse_cnss'] ?? null,
+                    'localite_cnss'    => $rowAssoc['localite_cnss'] ?? null,
+                ];
 
-                // Validation : s'assurer que c'est un nombre et qu'il existe dans la table gouvernorats.
-                // Si la colonne Excel contient des codes et que votre `id` de gouvernorat est un entier
-                // (ce qui est le cas avec `$table->id()`), on peut caster.
-                $gouvernoratId = (int) $gouvernoratCodeFromExcel; // Caste la valeur en entier
-
-                // Optionnel mais recommandé : Vérifier si l'ID existe réellement dans la base de données
-                // Décommenter si vous voulez être sûr que l'ID du code Excel est valide
-                // if (! in_array($gouvernoratId, $existingGouvernoratIds)) {
-                //     error_log("Code gouvernorat invalide/non trouvé pour : " . $gouvernoratCodeFromExcel . " (ligne: " . $row->getRowIndex() . ", entreprise: " . $rowAssoc['rs'] . "). L'entreprise est ignorée.");
-                //     $skippedCount++;
-                //     continue;
-                // }
-                // --- FIN DE LA MODIFICATION CRUCIALE ---
-
-
-                // 4. On crée l'entreprise
-                Entreprise::create([
-                    'nom_entreprise'    => $rowAssoc['rs'],
-                    'code_national'     => $rowAssoc['nat09_2023'],
-                    'libelle_activite'  => $rowAssoc['activite'] ?? 'Non spécifié',
-                    'gouvernorat_id'    => $gouvernoratId, // <-- Utilise directement l'ID numérique du fichier Excel
-                    'ville'             => $rowAssoc['ville'] ?? 'Non spécifié',
-                    'numero_rue'        => $rowAssoc['rue_r'] ?? null,
-                    'nom_rue'           => $rowAssoc['rue_r'] ?? null,
-                    'statut'            => $rowAssoc['statut_2023'] ?? 'active',
-                    'adresse_cnss'      => $rowAssoc['adresse_cnss'] ?? null,
-                    'localite_cnss'     => $rowAssoc['localite_cnss'] ?? null,
-                ]);
-                $importedCount++;
+                if (count($dataToImport) >= IMPORT_CHUNK_SIZE) {
+                    Entreprise::upsert($dataToImport, ['id'], $updateColumns);
+                    $totalUpsertedCount += count($dataToImport);
+                    $dataToImport = [];
+                }
             }
 
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erreur durant l\'importation. Vérifiez le format et la structure de votre fichier. Erreur technique: ' . $e->getMessage());
+            if (!empty($dataToImport)) {
+                Entreprise::upsert($dataToImport, ['id'], $updateColumns);
+                $totalUpsertedCount += count($dataToImport);
+            }
+
+        } catch (Throwable $e) {
+            return redirect()->back()->with('error_entreprises', 'Erreur durant l\'importation des entreprises. Erreur : ' . $e->getMessage());
         }
 
-        $message = "Le fichier a été importé et **{$importedCount} entreprises** ont été ajoutées avec succès !";
+        $message = "Importation d'entreprises terminée ! **{$totalUpsertedCount} entreprises** ont été créées ou mises à jour.";
         if ($skippedCount > 0) {
-            $message .= " Attention : **{$skippedCount} lignes** ont été ignorées (Code Gouvernorat invalide ou données manquantes/inattendues). Vérifiez les logs pour plus de détails.";
+            $message .= " Attention : **{$skippedCount} lignes** sur {$processedRowCount} ont été ignorées.";
+        }
+        return redirect()->route('admin.entreprises.import.form')->with('success_entreprises', $message);
+    }
+
+    /**
+     * Traite le fichier Excel des téléphones.
+     */
+    public function storeTelephones(Request $request)
+    {
+        // Validation spécifique pour le formulaire des téléphones
+        $request->validate(['file-telephones' => 'required|mimes:xlsx,xls,csv|max:20480']);
+
+        $file = $request->file('file-telephones');
+        $importedCount = 0;
+        $skippedRows = [];
+
+        try {
+            $spreadsheet = IOFactory::load($file->getRealPath());
+            $worksheet = $spreadsheet->getActiveSheet();
+            $header = [];
+            foreach ($worksheet->getRowIterator(1, 1) as $row) {
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+                foreach ($cellIterator as $cell) {
+                    $header[] = strtolower(trim($cell->getValue()));
+                }
+            }
+
+            DB::transaction(function () use ($worksheet, $header, &$importedCount, &$skippedRows) {
+                foreach ($worksheet->getRowIterator(2) as $rowIndex => $row) {
+                    $rowData = [];
+                    $cellIterator = $row->getCellIterator();
+                    $cellIterator->setIterateOnlyExistingCells(false);
+                    foreach ($cellIterator as $cell) {
+                        $rowData[] = $cell->getValue();
+                    }
+                    $rowAssoc = array_combine($header, array_pad($rowData, count($header), null));
+
+                    $entident = $rowAssoc['entident'] ?? null;
+                    $telephoneNumber = $rowAssoc['telephone'] ?? null;
+
+                    if (empty($entident) || empty($telephoneNumber)) {
+                        $skippedRows[] = $rowIndex;
+                        continue;
+                    }
+
+                    $entreprise = Entreprise::find($entident);
+
+                    if ($entreprise) {
+                        $entreprise->telephones()->updateOrCreate(
+                            ['numero' => $telephoneNumber],
+                            ['source' => $rowAssoc['source'] ?? 'import_excel']
+                        );
+                        $importedCount++;
+                    } else {
+                        $skippedRows[] = $rowIndex;
+                    }
+                }
+            });
+        } catch (Throwable $e) {
+            return redirect()->back()->with('error_telephones', 'Erreur durant l\'importation des téléphones. Erreur : ' . $e->getMessage());
         }
 
-        return redirect()->route('admin.entreprises.import.form')
-                         ->with('success', $message);
+        $message = "Importation des téléphones réussie ! **{$importedCount} numéros** ont été ajoutés ou mis à jour.";
+        if (!empty($skippedRows)) {
+            $skippedCount = count($skippedRows);
+            $message .= " Attention : **{$skippedCount} lignes** ont été ignorées (entreprise non trouvée ou données manquantes).";
+        }
+
+        return redirect()->route('admin.entreprises.import.form')->with('success_telephones', $message);
+    }
+
+    /**
+     * CORRIGÉ : Traite le fichier Excel des emails.
+     */
+    public function storeEmails(Request $request)
+    {
+        // Validation spécifique pour le formulaire des emails
+        $request->validate(['file-emails' => 'required|mimes:xlsx,xls,csv|max:20480']);
+
+        $file = $request->file('file-emails');
+        $importedCount = 0;
+        $skippedRows = [];
+
+        try {
+            $spreadsheet = IOFactory::load($file->getRealPath());
+            $worksheet = $spreadsheet->getActiveSheet();
+            $header = [];
+            foreach ($worksheet->getRowIterator(1, 1) as $row) {
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+                foreach ($cellIterator as $cell) {
+                    $header[] = strtolower(trim($cell->getValue()));
+                }
+            }
+
+            DB::transaction(function () use ($worksheet, $header, &$importedCount, &$skippedRows) {
+                foreach ($worksheet->getRowIterator(2) as $rowIndex => $row) {
+                    $rowData = [];
+                    $cellIterator = $row->getCellIterator();
+                    $cellIterator->setIterateOnlyExistingCells(false);
+                    foreach ($cellIterator as $cell) {
+                        $rowData[] = $cell->getValue();
+                    }
+                    $rowAssoc = array_combine($header, array_pad($rowData, count($header), null));
+
+                    $entident = $rowAssoc['entident'] ?? null;
+                    $emailAddress = $rowAssoc['email'] ?? null;
+
+                    if (empty($entident) || empty($emailAddress)) {
+                        $skippedRows[] = $rowIndex;
+                        continue;
+                    }
+
+                    $entreprise = Entreprise::find($entident);
+
+                    if ($entreprise) {
+                        $entreprise->emails()->updateOrCreate(
+                            ['email' => $emailAddress],
+                            ['source' => $rowAssoc['source'] ?? 'import_excel']
+                        );
+                        $importedCount++;
+                    } else {
+                        $skippedRows[] = $rowIndex;
+                    }
+                }
+            });
+        } catch (Throwable $e) {
+            return redirect()->back()->with('error_emails', 'Erreur durant l\'importation des emails. Erreur : ' . $e->getMessage());
+        }
+
+        $message = "Importation des emails réussie ! **{$importedCount} adresses email** ont été ajoutées ou mises à jour.";
+        if (!empty($skippedRows)) {
+            $skippedCount = count($skippedRows);
+            $message .= " Attention : **{$skippedCount} lignes** ont été ignorées (entreprise non trouvée ou données manquantes).";
+        }
+
+        return redirect()->route('admin.entreprises.import.form')->with('success_emails', $message);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\GenericEmail;
 use App\Models\EchantillonEnquete;
+use App\Models\Entreprise; // IMPORTANT : Importer le modèle Entreprise
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -26,66 +27,51 @@ class MailController extends Controller
             'corps' => 'required|string',
         ]);
 
+        // On récupère l'objet Entreprise pour le passer à la vue de l'email
+        $entreprise = Entreprise::find($validated['entreprise_id']);
+        
         $filesToAttach = [];
         Log::info('Début du processus d\'envoi d\'e-mail pour ' . $validated['destinataire']);
 
-        // ** CORRECTION DE LA LOGIQUE DE RECHERCHE **
-        // On trouve le premier échantillon pour cette entreprise et on charge son enquête,
-        // quel que soit le statut de cette dernière.
         $echantillon = EchantillonEnquete::where('entreprise_id', $validated['entreprise_id'])
-                                            ->with('enquete') // On s'assure de charger la relation
-                                            ->first();
+                                          ->with('enquete')
+                                          ->first();
 
-        if ($echantillon && $echantillon->enquete) {
-            Log::info('Enquête trouvée avec ID: ' . $echantillon->enquete->id . ' et statut: "' . $echantillon->enquete->statut . '"');
-            
-            if ($echantillon->enquete->piece_jointe_path) {
-                $nomDossier = $echantillon->enquete->piece_jointe_path;
-                Log::info('Valeur du champ "piece_jointe_path" : "' . $nomDossier . '"');
+        if ($echantillon && $echantillon->enquete && $echantillon->enquete->piece_jointe_path) {
+            $nomDossier = $echantillon->enquete->piece_jointe_path;
+            $dossierRelatif = 'pieces_jointes/' . $nomDossier;
+            $directoryPath = public_path($dossierRelatif);
 
-                $dossierRelatif = 'pieces_jointes/' . $nomDossier;
-                $directoryPath = public_path($dossierRelatif);
-                Log::info('Chemin complet du dossier recherché : ' . $directoryPath);
-
-                if (File::isDirectory($directoryPath)) {
-                    Log::info('SUCCESS: Le dossier a été trouvé.');
-                    $allFiles = File::files($directoryPath);
-                    
-                    if (empty($allFiles)) {
-                        Log::warning('Le dossier existe mais est vide.');
-                    } else {
-                        Log::info(count($allFiles) . ' fichier(s) trouvé(s).');
-                    }
-
-                    foreach ($allFiles as $file) {
-                        $cheminCompletFichier = $dossierRelatif . '/' . $file->getFilename();
-                        $filesToAttach[] = $cheminCompletFichier;
-                        Log::info('Fichier ajouté à la liste d\'envoi : ' . $cheminCompletFichier);
-                    }
-                } else {
-                    Log::error('ERREUR: Le dossier de pièces jointes n\'a pas été trouvé à l\'emplacement : ' . $directoryPath);
+            if (File::isDirectory($directoryPath)) {
+                $allFiles = File::files($directoryPath);
+                foreach ($allFiles as $file) {
+                    $filesToAttach[] = $dossierRelatif . '/' . $file->getFilename();
                 }
             } else {
-                Log::warning('Le champ "piece_jointe_path" est vide (NULL) pour l\'enquête ID ' . $echantillon->enquete->id);
+                Log::error('ERREUR: Le dossier de pièces jointes n\'a pas été trouvé à l\'emplacement : ' . $directoryPath);
             }
-        } else {
-            Log::error('ERREUR: Impossible de trouver un échantillon pour l\'entreprise ID ' . $validated['entreprise_id']);
         }
 
         try {
+            // On passe toutes les données nécessaires, y compris l'objet $entreprise
             Mail::to($validated['destinataire'])
-                ->send(new GenericEmail($validated['sujet'], $validated['corps'], $filesToAttach));
+                ->send(new GenericEmail(
+                    $validated['sujet'],
+                    $validated['corps'],
+                    $filesToAttach,
+                    $entreprise // On ajoute l'entreprise ici
+                ));
 
-            Log::info('Envoi de l\'e-mail réussi à ' . $validated['destinataire'] . ' avec ' . count($filesToAttach) . ' pièce(s) jointe(s).');
+            Log::info('Envoi de l\'e-mail réussi à ' . $validated['destinataire']);
             return response()->json(['success' => true, 'message' => 'E-mail envoyé avec succès !']);
 
         } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'envoi de l\'e-mail : ' . $e->getMessage());
+            Log::error('Erreur lors de l\'envoi de l\'e-mail : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
             report($e); 
             
             return response()->json([
                 'success' => false, 
-                'message' => 'Erreur lors de l\'envoi. Veuillez vérifier les logs pour plus de détails.'
+                'message' => 'Erreur Serveur: Impossible d\'envoyer l\'e-mail. Veuillez contacter l\'administrateur.'
             ], 500);
         }
     }
