@@ -35,6 +35,16 @@ class DatabaseSeeder extends Seeder
             GouvernoratSeeder::class,
         ]);
 
+        // ... dans la méthode run() du seeder
+$apiUser = User::firstOrCreate(
+    ['email' => 'apiuser@example.com'],
+    [
+        'name' => 'API Tester',
+        'password' => bcrypt('password'), // Mot de passe pour le test (hashé)
+    ]
+);
+$this->command->info('Utilisateur API de test créé/vérifié: ' . $apiUser->email);
+
         // On récupère les données essentielles
         $teleoperateurs = User::role('Téléopérateur')->get();
         $gouvernoratIds = Gouvernorat::pluck('id')->all();
