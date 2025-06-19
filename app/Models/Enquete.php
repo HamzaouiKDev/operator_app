@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Enquete extends Model
 {
-    protected $table = 'enquetes';
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -19,18 +20,30 @@ class Enquete extends Model
         'statut',
         'titre_mail',
         'corps_mail',
-        'piece_jointe_path', // <-- CHAMP AJOUTÉ
+        'piece_jointe_path',
         'date_debut',
         'date_fin',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'date_debut' => 'date',
+        'date_fin' => 'date',
+    ];
+
+    /**
+     * Utiliser un format de date non ambigu pour la compatibilité avec SQL Server.
+     *
+     * @var string
+     */
+    protected $dateFormat = 'Ymd H:i:s';
+
     public function echantillons()
     {
         return $this->hasMany(EchantillonEnquete::class, 'enquete_id');
-    }
-
-    public function questionnaires()
-    {
-        return $this->hasMany(QuestionnaireEnquete::class, 'enquete_id');
     }
 }

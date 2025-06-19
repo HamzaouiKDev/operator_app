@@ -19,6 +19,9 @@ class Gouvernorat extends Model
         'id',
         'nom',
     ];
+    
+   protected $dateFormat = 'Ymd H:i:s';
+   
 
     /**
      * Indique que la clé primaire n'est pas auto-incrémentée

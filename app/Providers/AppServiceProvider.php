@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\EchantillonEnquete;
 use Illuminate\Support\ServiceProvider;
+use App\Observers\EchantillonEnqueteObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+                EchantillonEnquete::observe(EchantillonEnqueteObserver::class);
+
     }
 }

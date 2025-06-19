@@ -2,81 +2,98 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Facades\Auth;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-/**
- * 
- *
- * @property int $id
- * @property int $entreprise_id
- * @property int $enquete_id
- * @property string $statut
- * @property string|null $priorite
- * @property int|null $utilisateur_id
- * @property string|null $date_attribution
- * @property string|null $date_mise_a_jour
- * @property string|null $date_liberation
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Enquete $enquete
- * @property-read \App\Models\Entreprise $entreprise
- * @property-read \App\Models\User|null $utilisateur
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereDateAttribution($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereDateLiberation($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereDateMiseAJour($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereEnqueteId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereEntrepriseId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete wherePriorite($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereStatut($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|EchantillonEnquete whereUtilisateurId($value)
- * @mixin \Eloquent
- */
 class EchantillonEnquete extends Model
 {
     use HasFactory;
 
+    /**
+     * Le nom de la table associée au modèle.
+     *
+     * @var string
+     */
     protected $table = 'echantillons_enquetes';
 
+    /**
+     * Les attributs qui peuvent être assignés en masse.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'entreprise_id',
         'enquete_id',
         'statut',
         'priorite',
-        'utilisateur_id',      // ✅ IMPORTANT - Ajouté
+        'utilisateur_id',
         'date_attribution',
         'date_mise_a_jour',
-        'date_liberation'
+        'date_liberation',
+        'date_traitement',
+        'commentaire',
     ];
 
-    protected $dates = [
-        'created_at',
-        'updated_at',
-        'date_attribution',
-        'date_mise_a_jour',
-        'date_liberation'
+    /**
+     * Les attributs qui doivent être convertis en types natifs.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'date_attribution' => 'datetime',
+        'date_mise_a_jour' => 'datetime',
+        'date_liberation'  => 'datetime',
+        'date_traitement'  => 'datetime',
     ];
+
+    /**
+     * Obtenir le format de date à utiliser pour les requêtes de base de données.
+     * Correction finale : on utilise le format ISO 8601 complet (avec "T")
+     * pour garantir une interprétation correcte par SQL Server,
+     * indépendamment de ses paramètres régionaux.
+     *
+     * @return string
+     */
+    public function getDateFormat()
+    {
+        return 'Y-m-d\TH:i:s.v';
+    }
 
     // Relations
-    public function entreprise()
+
+    /**
+     * Obtenir l'entreprise associée à l'échantillon.
+     */
+    public function entreprise(): BelongsTo
     {
         return $this->belongsTo(Entreprise::class, 'entreprise_id');
     }
 
-    public function enquete()
+    /**
+     * Obtenir l'enquête associée à l'échantillon.
+     */
+    public function enquete(): BelongsTo
     {
         return $this->belongsTo(Enquete::class, 'enquete_id');
     }
 
-    public function utilisateur()
+    /**
+     * Obtenir l'utilisateur assigné à l'échantillon.
+     */
+    public function utilisateur(): BelongsTo
     {
         return $this->belongsTo(User::class, 'utilisateur_id');
+    }
+    
+    /**
+     * Obtenir l'historique des changements de statut pour l'échantillon.
+     */
+    public function statutHistories(): HasMany
+    {
+        // latest() trie les résultats par `created_at` (par défaut) en ordre décroissant.
+        return $this->hasMany(EchantillonStatutHistory::class, 'echantillon_enquete_id')->latest();
     }
 }

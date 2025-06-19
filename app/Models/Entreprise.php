@@ -22,7 +22,7 @@ class Entreprise extends Model
         'code_national',
         'nom_entreprise',
         'libelle_activite',
-        'gouvernorat_id', // <-- Important : on utilise la clé étrangère
+        'gouvernorat_id',
         'numero_rue',
         'nom_rue',
         'ville',
@@ -32,11 +32,17 @@ class Entreprise extends Model
     ];
 
     /**
+     * Utiliser un format de date non ambigu pour la compatibilité avec SQL Server.
+     *
+     * @var string
+     */
+    protected $dateFormat = 'Ymd H:i:s';
+
+    /**
      * Définit la relation : Une entreprise APPARTIENT À un gouvernorat.
      */
     public function gouvernorat(): BelongsTo
     {
-        // Laravel va automatiquement chercher la colonne `gouvernorat_id` dans cette table.
         return $this->belongsTo(Gouvernorat::class);
     }
 

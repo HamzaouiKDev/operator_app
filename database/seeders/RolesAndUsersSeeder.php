@@ -3,7 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
+// CORRECTION : Utiliser le modèle Role de l'application
+use App\Models\Role;
 use App\Models\User;
 
 class RolesAndUsersSeeder extends Seeder
@@ -17,6 +18,7 @@ class RolesAndUsersSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // 1. Créer les rôles s'ils n'existent pas déjà
+        // Cette ligne utilisera maintenant App\Models\Role, qui a la correction pour le format de date
         $adminRole = Role::firstOrCreate(['name' => 'Admin'], ['guard_name' => 'web']);
         $teleopRole = Role::firstOrCreate(['name' => 'Téléopérateur'], ['guard_name' => 'web']);
 

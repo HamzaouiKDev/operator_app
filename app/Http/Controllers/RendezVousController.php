@@ -70,7 +70,7 @@ class RendezVousController extends Controller
 
         // CORRECTION: Tri amélioré pour gérer les valeurs NULL de heure_rdv
         // Met les RDVs avec heure_rdv NULL à la fin, puis trie les autres par proximité.
-        $rendezVousQuery->orderByRaw('CASE WHEN heure_rdv IS NULL THEN 1 ELSE 0 END ASC, ABS(TIMESTAMPDIFF(SECOND, heure_rdv, NOW())) ASC');
+        $rendezVousQuery->orderByRaw("CASE WHEN heure_rdv IS NULL THEN 1 ELSE 0 END ASC, ABS(DATEDIFF(second, heure_rdv, GETDATE())) ASC");
 
         $rendezVous = $rendezVousQuery
             ->with('echantillonEnquete.entreprise') // Charger les relations pour l'affichage
@@ -286,8 +286,7 @@ public function store(Request $request, $id) // $id est echantillon_enquete_id
         ->with('echantillonEnquete.entreprise')
         // ✅ CORRIGÉ: Tri par proximité à l'heure actuelle pour les RDV d'aujourd'hui
         // Ceux qui ne sont pas encore passés en premier, puis ceux qui sont passés
-        ->orderByRaw('CASE WHEN TIME(heure_rdv) >= CURTIME() THEN 0 ELSE 1 END ASC, ABS(TIMESTAMPDIFF(SECOND, heure_rdv, NOW())) ASC')
-        // Pour PostgreSQL: ->orderByRaw("CASE WHEN heure_rdv::time >= CURRENT_TIME THEN 0 ELSE 1 END ASC, ABS(EXTRACT(EPOCH FROM (heure_rdv - NOW()))) ASC")
+        ->orderByRaw("CASE WHEN CONVERT(time, heure_rdv) >= CONVERT(time, GETDATE()) THEN 0 ELSE 1 END ASC, ABS(DATEDIFF(second, heure_rdv, GETDATE())) ASC")        // Pour PostgreSQL: ->orderByRaw("CASE WHEN heure_rdv::time >= CURRENT_TIME THEN 0 ELSE 1 END ASC, ABS(EXTRACT(EPOCH FROM (heure_rdv - NOW()))) ASC")
         // Pour SQL Server: ->orderByRaw("CASE WHEN CONVERT(time, heure_rdv) >= CONVERT(time, GETDATE()) THEN 0 ELSE 1 END ASC, ABS(DATEDIFF(second, heure_rdv, GETDATE())) ASC")
         ->paginate(10, ['*'], 'page_aujourdhui')
         ->appends($request->except('page'));
