@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\EmailEntreprise; // Ajout nécessaire pour l'import des emails
+use App\Models\EmailEntreprise;
 use App\Models\Entreprise;
 use App\Models\TelephoneEntreprise;
 use Illuminate\Http\Request;
@@ -26,20 +26,22 @@ class EntrepriseImportController extends Controller
      */
     public function store(Request $request)
     {
-        // Validation spécifique pour le formulaire des entreprises
+        // CORRECTION: Augmente la durée d'exécution pour les gros fichiers.
+        set_time_limit(300);
         $request->validate(['file-entreprises' => 'required|mimes:xlsx,xls,csv|max:20480']);
 
         $file = $request->file('file-entreprises');
-        $dataToImport = [];
-        $skippedCount = 0;
-        $processedRowCount = 0;
+        $dataChunk = [];
+        // CORRECTION: Réduit la taille des lots pour être compatible avec SQL Server.
+        $chunkSize = 100;
         $totalUpsertedCount = 0;
-
-        if (!defined('IMPORT_CHUNK_SIZE')) {
-            define('IMPORT_CHUNK_SIZE', 500);
-        }
+        $processedRowCount = 0;
+        $skippedCount = 0;
 
         try {
+            // CORRECTION: Activer l'insertion manuelle des ID pour SQL Server.
+            DB::unprepared('SET IDENTITY_INSERT entreprises ON');
+
             $spreadsheet = IOFactory::load($file->getRealPath());
             $worksheet = $spreadsheet->getActiveSheet();
             $header = [];
@@ -58,6 +60,7 @@ class EntrepriseImportController extends Controller
             ];
 
             foreach ($worksheet->getRowIterator(2) as $row) {
+                $processedRowCount++;
                 $rowData = [];
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(false);
@@ -65,7 +68,6 @@ class EntrepriseImportController extends Controller
                     $rowData[] = $cell->getValue();
                 }
                 $rowAssoc = array_combine($header, array_pad($rowData, count($header), null));
-                $processedRowCount++;
 
                 $entident = $rowAssoc['entident'] ?? null;
                 if (empty($entident) || empty($rowAssoc['rs'])) {
@@ -73,7 +75,7 @@ class EntrepriseImportController extends Controller
                     continue;
                 }
 
-                $dataToImport[] = [
+                $dataChunk[] = [
                     'id'               => $entident,
                     'nom_entreprise'   => $rowAssoc['rs'],
                     'code_national'    => $rowAssoc['nat09_2023'],
@@ -87,21 +89,24 @@ class EntrepriseImportController extends Controller
                     'localite_cnss'    => $rowAssoc['localite_cnss'] ?? null,
                 ];
 
-                if (count($dataToImport) >= IMPORT_CHUNK_SIZE) {
-                    Entreprise::upsert($dataToImport, ['id'], $updateColumns);
-                    $totalUpsertedCount += count($dataToImport);
-                    $dataToImport = [];
+                if (count($dataChunk) >= $chunkSize) {
+                    Entreprise::upsert($dataChunk, ['id'], $updateColumns);
+                    $totalUpsertedCount += count($dataChunk);
+                    $dataChunk = [];
                 }
             }
 
-            if (!empty($dataToImport)) {
-                Entreprise::upsert($dataToImport, ['id'], $updateColumns);
-                $totalUpsertedCount += count($dataToImport);
+            if (!empty($dataChunk)) {
+                Entreprise::upsert($dataChunk, ['id'], $updateColumns);
+                $totalUpsertedCount += count($dataChunk);
             }
 
         } catch (Throwable $e) {
+            DB::unprepared('SET IDENTITY_INSERT entreprises OFF');
             return redirect()->back()->with('error_entreprises', 'Erreur durant l\'importation des entreprises. Erreur : ' . $e->getMessage());
         }
+
+        DB::unprepared('SET IDENTITY_INSERT entreprises OFF');
 
         $message = "Importation d'entreprises terminée ! **{$totalUpsertedCount} entreprises** ont été créées ou mises à jour.";
         if ($skippedCount > 0) {
@@ -115,12 +120,14 @@ class EntrepriseImportController extends Controller
      */
     public function storeTelephones(Request $request)
     {
-        // Validation spécifique pour le formulaire des téléphones
+        set_time_limit(300);
         $request->validate(['file-telephones' => 'required|mimes:xlsx,xls,csv|max:20480']);
 
         $file = $request->file('file-telephones');
-        $importedCount = 0;
-        $skippedRows = [];
+        $chunkSize = 1000;
+        $dataChunk = [];
+        $totalImported = 0;
+        $totalSkipped = 0;
 
         try {
             $spreadsheet = IOFactory::load($file->getRealPath());
@@ -134,62 +141,100 @@ class EntrepriseImportController extends Controller
                 }
             }
 
-            DB::transaction(function () use ($worksheet, $header, &$importedCount, &$skippedRows) {
-                foreach ($worksheet->getRowIterator(2) as $rowIndex => $row) {
-                    $rowData = [];
-                    $cellIterator = $row->getCellIterator();
-                    $cellIterator->setIterateOnlyExistingCells(false);
-                    foreach ($cellIterator as $cell) {
-                        $rowData[] = $cell->getValue();
-                    }
-                    $rowAssoc = array_combine($header, array_pad($rowData, count($header), null));
-
-                    $entident = $rowAssoc['entident'] ?? null;
-                    $telephoneNumber = $rowAssoc['telephone'] ?? null;
-
-                    if (empty($entident) || empty($telephoneNumber)) {
-                        $skippedRows[] = $rowIndex;
-                        continue;
-                    }
-
-                    $entreprise = Entreprise::find($entident);
-
-                    if ($entreprise) {
-                        $entreprise->telephones()->updateOrCreate(
-                            ['numero' => $telephoneNumber],
-                            ['source' => $rowAssoc['source'] ?? 'import_excel']
-                        );
-                        $importedCount++;
-                    } else {
-                        $skippedRows[] = $rowIndex;
-                    }
+            foreach ($worksheet->getRowIterator(2) as $row) {
+                $rowData = [];
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+                foreach ($cellIterator as $cell) {
+                    $rowData[] = $cell->getValue();
                 }
-            });
+                $dataChunk[] = array_combine($header, array_pad($rowData, count($header), null));
+
+                if (count($dataChunk) >= $chunkSize) {
+                    list($imported, $skipped) = $this->processAndInsertTelephones($dataChunk);
+                    $totalImported += $imported;
+                    $totalSkipped += $skipped;
+                    $dataChunk = [];
+                }
+            }
+
+            if (!empty($dataChunk)) {
+                list($imported, $skipped) = $this->processAndInsertTelephones($dataChunk);
+                $totalImported += $imported;
+                $totalSkipped += $skipped;
+            }
+
         } catch (Throwable $e) {
             return redirect()->back()->with('error_telephones', 'Erreur durant l\'importation des téléphones. Erreur : ' . $e->getMessage());
         }
 
-        $message = "Importation des téléphones réussie ! **{$importedCount} numéros** ont été ajoutés ou mis à jour.";
-        if (!empty($skippedRows)) {
-            $skippedCount = count($skippedRows);
-            $message .= " Attention : **{$skippedCount} lignes** ont été ignorées (entreprise non trouvée ou données manquantes).";
+        $message = "Importation des téléphones réussie ! **{$totalImported} numéros** ont été ajoutés ou mis à jour.";
+        if ($totalSkipped > 0) {
+            $message .= " Attention : **{$totalSkipped} lignes** ont été ignorées.";
         }
 
         return redirect()->route('admin.entreprises.import.form')->with('success_telephones', $message);
     }
 
+    private function processAndInsertTelephones(array $chunkData)
+    {
+        $entidentsFromFile = array_unique(array_filter(array_column($chunkData, 'entident')));
+        if (empty($entidentsFromFile)) {
+            return [0, count($chunkData)];
+        }
+        
+        $existingEntidents = collect();
+        foreach (array_chunk($entidentsFromFile, 500) as $idChunk) {
+            $existingEntidents = $existingEntidents->merge(
+                Entreprise::whereIn('id', $idChunk)->pluck('id')
+            );
+        }
+        $existingEntidents = $existingEntidents->flip();
+
+        $dataToUpsert = [];
+        $skippedCount = 0;
+
+        foreach ($chunkData as $rowAssoc) {
+            $entident = $rowAssoc['entident'] ?? null;
+            $telephoneNumber = isset($rowAssoc['telephone']) ? (string)$rowAssoc['telephone'] : null;
+
+            if (empty($entident) || empty($telephoneNumber) || !$existingEntidents->has($entident)) {
+                $skippedCount++;
+                continue;
+            }
+
+            $dataToUpsert[] = [
+                'entreprise_id' => $entident,
+                'numero' => $telephoneNumber,
+                'source' => $rowAssoc['source'] ?? 'import_excel'
+            ];
+        }
+
+        // CORRECTION: Découpe l'opération d'insertion (upsert) en plus petits lots.
+        if (!empty($dataToUpsert)) {
+            foreach(array_chunk($dataToUpsert, 200) as $upsertChunk) {
+                 TelephoneEntreprise::upsert($upsertChunk, ['entreprise_id', 'numero'], ['source']);
+            }
+        }
+
+        return [count($dataToUpsert), $skippedCount];
+    }
+
+
     /**
-     * CORRIGÉ : Traite le fichier Excel des emails.
+     * Traite le fichier Excel des emails.
      */
     public function storeEmails(Request $request)
     {
-        // Validation spécifique pour le formulaire des emails
+        set_time_limit(300);
         $request->validate(['file-emails' => 'required|mimes:xlsx,xls,csv|max:20480']);
 
         $file = $request->file('file-emails');
-        $importedCount = 0;
-        $skippedRows = [];
-
+        $chunkSize = 1000;
+        $dataChunk = [];
+        $totalImported = 0;
+        $totalSkipped = 0;
+        
         try {
             $spreadsheet = IOFactory::load($file->getRealPath());
             $worksheet = $spreadsheet->getActiveSheet();
@@ -202,47 +247,82 @@ class EntrepriseImportController extends Controller
                 }
             }
 
-            DB::transaction(function () use ($worksheet, $header, &$importedCount, &$skippedRows) {
-                foreach ($worksheet->getRowIterator(2) as $rowIndex => $row) {
-                    $rowData = [];
-                    $cellIterator = $row->getCellIterator();
-                    $cellIterator->setIterateOnlyExistingCells(false);
-                    foreach ($cellIterator as $cell) {
-                        $rowData[] = $cell->getValue();
-                    }
-                    $rowAssoc = array_combine($header, array_pad($rowData, count($header), null));
-
-                    $entident = $rowAssoc['entident'] ?? null;
-                    $emailAddress = $rowAssoc['email'] ?? null;
-
-                    if (empty($entident) || empty($emailAddress)) {
-                        $skippedRows[] = $rowIndex;
-                        continue;
-                    }
-
-                    $entreprise = Entreprise::find($entident);
-
-                    if ($entreprise) {
-                        $entreprise->emails()->updateOrCreate(
-                            ['email' => $emailAddress],
-                            ['source' => $rowAssoc['source'] ?? 'import_excel']
-                        );
-                        $importedCount++;
-                    } else {
-                        $skippedRows[] = $rowIndex;
-                    }
+            foreach ($worksheet->getRowIterator(2) as $row) {
+                $rowData = [];
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+                foreach ($cellIterator as $cell) {
+                    $rowData[] = $cell->getValue();
                 }
-            });
+                $dataChunk[] = array_combine($header, array_pad($rowData, count($header), null));
+
+                if (count($dataChunk) >= $chunkSize) {
+                    list($imported, $skipped) = $this->processAndInsertEmails($dataChunk);
+                    $totalImported += $imported;
+                    $totalSkipped += $skipped;
+                    $dataChunk = [];
+                }
+            }
+            
+            if (!empty($dataChunk)) {
+                list($imported, $skipped) = $this->processAndInsertEmails($dataChunk);
+                $totalImported += $imported;
+                $totalSkipped += $skipped;
+            }
+
         } catch (Throwable $e) {
             return redirect()->back()->with('error_emails', 'Erreur durant l\'importation des emails. Erreur : ' . $e->getMessage());
         }
 
-        $message = "Importation des emails réussie ! **{$importedCount} adresses email** ont été ajoutées ou mises à jour.";
-        if (!empty($skippedRows)) {
-            $skippedCount = count($skippedRows);
-            $message .= " Attention : **{$skippedCount} lignes** ont été ignorées (entreprise non trouvée ou données manquantes).";
+        $message = "Importation des emails réussie ! **{$totalImported} adresses email** ont été ajoutées ou mises à jour.";
+        if ($totalSkipped > 0) {
+            $message .= " Attention : **{$totalSkipped} lignes** ont été ignorées.";
         }
 
         return redirect()->route('admin.entreprises.import.form')->with('success_emails', $message);
+    }
+
+    private function processAndInsertEmails(array $chunkData)
+    {
+        $entidentsFromFile = array_unique(array_filter(array_column($chunkData, 'entident')));
+        if (empty($entidentsFromFile)) {
+            return [0, count($chunkData)];
+        }
+        
+        $existingEntidents = collect();
+        foreach (array_chunk($entidentsFromFile, 500) as $idChunk) {
+            $existingEntidents = $existingEntidents->merge(
+                Entreprise::whereIn('id', $idChunk)->pluck('id')
+            );
+        }
+        $existingEntidents = $existingEntidents->flip();
+        
+        $dataToUpsert = [];
+        $skippedCount = 0;
+
+        foreach ($chunkData as $rowAssoc) {
+            $entident = $rowAssoc['entident'] ?? null;
+            $emailAddress = $rowAssoc['email'] ?? null;
+
+            if (empty($entident) || empty($emailAddress) || !filter_var($emailAddress, FILTER_VALIDATE_EMAIL) || !$existingEntidents->has($entident)) {
+                $skippedCount++;
+                continue;
+            }
+
+            $dataToUpsert[] = [
+                'entreprise_id' => $entident,
+                'email' => $emailAddress,
+                'source' => $rowAssoc['source'] ?? 'import_excel'
+            ];
+        }
+
+        // CORRECTION: Découpe l'opération d'insertion (upsert) en plus petits lots.
+        if (!empty($dataToUpsert)) {
+            foreach(array_chunk($dataToUpsert, 200) as $upsertChunk) {
+                EmailEntreprise::upsert($upsertChunk, ['entreprise_id', 'email'], ['source']);
+            }
+        }
+        
+        return [count($dataToUpsert), $skippedCount];
     }
 }

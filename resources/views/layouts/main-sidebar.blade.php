@@ -44,8 +44,19 @@
                         <i class="side-menu__icon fas fa-file-import"></i><span class="side-menu__label">استيراد الشركات</span>
                     </a>
                 </li>
+                {{-- CORRECTION : Mise en forme et traduction du lien --}}
+            <li class="slide">
+                <a class="side-menu__item" href="{{ route('admin.enquetes.index') }}">
+                    <i class="side-menu__icon fas fa-poll"></i><span class="side-menu__label">إدارة المسوح</span>
+                </a>
+            </li>
+             <li class="slide">
+                <a class="side-menu__item" href="{{ route('admin.echantillons.import.form') }}">
+                    <i class="side-menu__icon fas fa-users"></i><span class="side-menu__label">إدارة العينات</span>
+                </a>
+            </li>
             @endrole
-
+            
 
             {{-- ============================================= --}}
             {{-- == SECTION SUPERVISEUR (Prêt pour le futur) == --}}

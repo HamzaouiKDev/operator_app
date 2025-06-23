@@ -7,18 +7,16 @@ use Illuminate\Support\Facades\Schema;
 class AddContactIdToTelephoneEntreprisesTable extends Migration
 {
     public function up()
-    {
-        Schema::table('telephones_entreprises', function (Blueprint $table) {
-            $table->unsignedBigInteger('contact_id')->nullable()->after('entreprise_id'); // Ou après une autre colonne pertinente
+{
+    Schema::table('telephones_entreprises', function (Blueprint $table) {
+        $table->unsignedBigInteger('contact_id')->nullable()->after('entreprise_id');
 
-            // Optionnel : Définir la clé étrangère si vous avez une table 'contacts' avec un 'id'
-            // Assurez-vous que le nom de la table 'contacts' est correct.
-            $table->foreign('contact_id')
-                  ->references('id')
-                  ->on('contact_entreprises') // Remplacez 'contacts' par le nom exact de votre table de contacts
-                  ->onDelete('cascade'); // Ou onDelete('set null') selon votre logique
-        });
-    }
+        // La clé étrangère est définie ici, mais sans l'action en cascade
+        $table->foreign('contact_id')
+              ->references('id')
+              ->on('contact_entreprises');
+    });
+}
 
     public function down()
     {

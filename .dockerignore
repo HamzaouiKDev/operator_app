@@ -1,0 +1,13 @@
+.git
+.github
+.env
+.env.example
+.dockerignore
+docker-compose.yml
+deploy.sh
+README.md
+node_modules/
+public/storage/
+storage/framework/
+storage/logs/
+vendor/

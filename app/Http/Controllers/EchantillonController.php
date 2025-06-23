@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EchantillonEnquete;
-use App\Models\Entreprise;
-use App\Models\ContactEntreprise;
-use App\Models\TelephoneEntreprise;
-use App\Models\Appel;
+use Throwable;
 use App\Models\User;
+use App\Models\Appel;
+use App\Models\Entreprise;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\ContactEntreprise;
+use App\Models\EchantillonEnquete;
 use Illuminate\Support\Facades\DB;
+use App\Models\TelephoneEntreprise;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Models\EchantillonStatutHistory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class EchantillonController extends Controller
@@ -79,8 +81,7 @@ class EchantillonController extends Controller
             
             $echantillonDisponible = DB::table('echantillons_enquetes')
                 ->whereNull('utilisateur_id')
-                ->orderByRaw('CASE WHEN priorite = "haute" THEN 1 WHEN priorite = "moyenne" THEN 2 WHEN priorite = "basse" THEN 3 ELSE 4 END')
-                ->orderBy('id', 'asc')
+                ->orderByRaw("CASE WHEN priorite = 'haute' THEN 1 WHEN priorite = 'moyenne' THEN 2 WHEN priorite = 'basse' THEN 3 ELSE 4 END")                ->orderBy('id', 'asc')
                 ->lockForUpdate() // Important pour éviter les conditions de concurrence
                 ->first();
 
@@ -100,8 +101,8 @@ class EchantillonController extends Controller
                 ->whereNull('utilisateur_id') // Double vérification
                 ->update([
                     'utilisateur_id' => $user->id,
-                    'statut' => 'en attente', // Statut initial lors de l'attribution
-                    'updated_at' => $maintenant
+                    'statut' => 'en attente',
+                    'updated_at' => now()->format('Ymd H:i:s')
                 ]);
 
             if ($updated) {
@@ -566,28 +567,90 @@ class EchantillonController extends Controller
         return response()->json(['success' => true, 'disponibles' => $disponibles]);
     }
 
-    public function markAsRefused(Request $request, EchantillonEnquete $echantillon)
-    {
+   public function markAsRefused(Request $request, EchantillonEnquete $echantillon)
+{
+    try {
+        $request->validate([
+            'commentaire' => 'nullable|string|max:1000',
+        ]);
+
         $user = Auth::user();
 
+        // 1. Vérifications initiales
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Utilisateur non authentifié.'], 401);
         }
 
-        // Vérifier si l'échantillon appartient à l'utilisateur
-        if ($echantillon->utilisateur_id !== $user->id) {
+        if ($echantillon->utilisateur_id != $user->id) {
             return response()->json(['success' => false, 'message' => 'Cet échantillon n\'est pas assigné à cet utilisateur.'], 403);
         }
 
-        if ($echantillon->statut === 'refus') {
-            return response()->json(['success' => false, 'message' => 'Cet échantillon est déjà marqué comme refusé.'], 400);
-        }
+        // 2. Utiliser une transaction pour s'assurer que toutes les opérations réussissent ou échouent ensemble.
+        $finalStatus = DB::transaction(function () use ($echantillon, $request, $user) {
+            
+            // Étape A: Enregistrer l'action de refus DANS TOUS LES CAS.
+            EchantillonStatutHistory::create([
+                'echantillon_enquete_id' => $echantillon->id,
+                'user_id'                => $user->id,
+                'ancien_statut'          => $echantillon->statut, // Statut actuel avant la modification
+                'nouveau_statut'         => 'refus', // L'action de l'utilisateur est toujours 'refus'
+                'commentaire'            => $request->input('commentaire'),
+            ]);
 
-        $echantillon->statut = 'refus';
-        $echantillon->save();
+            // Étape B: Compter le nombre total de refus enregistrés pour cet échantillon.
+            $refusCount = EchantillonStatutHistory::where('echantillon_enquete_id', $echantillon->id)
+                ->where('nouveau_statut', 'refus')
+                ->count();
+            
+            // Étape C: Mettre à jour l'échantillon principal.
+            $echantillon->date_traitement = now();
+            $echantillon->commentaire = $request->input('commentaire');
 
-        return response()->json(['success' => true, 'message' => 'L\'échantillon a été marqué comme refusé avec succès.']);
+            // Étape D: Déterminer le nouveau statut en fonction du nombre de refus.
+            if ($refusCount >= 5) {
+                $echantillon->statut = 'refus final';
+            } else {
+                $echantillon->statut = 'refus';
+            }
+
+            // Étape E: Sauvegarder. L'Observer sera déclenché ici.
+            // Si l'Observer retourne false, la méthode save() échouera.
+            if (!$echantillon->save()) {
+                 // L'observer a bloqué la sauvegarde. On lève une exception pour annuler la transaction.
+                 throw new \Exception('Sauvegarde bloquée par l-Observer (statut déjà final).');
+            }
+            
+            // Retourner le statut final pour la réponse JSON.
+            return $echantillon->statut;
+        });
+
+        // 3. Renvoyer la réponse de succès
+        $message = $finalStatus === 'refus final'
+            ? 'Échantillon marqué comme refusé. Le statut est maintenant "Refus Final" (seuil des 5 refus atteint).'
+            : 'L\'échantillon a été marqué comme refusé avec succès.';
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'nouveau_statut' => $finalStatus
+        ]);
+
+    } catch (Throwable $e) {
+        // Gérer les erreurs (validation, échec de la transaction, etc.)
+        $isObserverBlock = str_contains($e->getMessage(), 'Observer');
+        
+        Log::error("Erreur dans markAsRefused: " . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => $isObserverBlock
+                ? 'Impossible de modifier le statut car l\'échantillon est déjà dans un état final.'
+                : 'Une erreur serveur s\'est produite lors de la sauvegarde.',
+            'error_details' => $e->getMessage()
+        ], $isObserverBlock ? 409 : 500); // HTTP 409 Conflict si bloqué par l'observer
     }
+}
+
 
     /**
      * Affiche les détails d'un échantillon spécifique.
@@ -605,7 +668,7 @@ class EchantillonController extends Controller
         Log::info("[EchantillonController@show] Demande d'affichage de l'échantillon #{$echantillon->id} par l'utilisateur #{$user->id}");
 
         // Vérification : L'utilisateur ne peut voir que les échantillons qui lui sont assignés.
-        if ($echantillon->utilisateur_id !== $user->id) {
+        if ((int) $echantillon->utilisateur_id !== (int) $user->id)  {
             Log::warning("[EchantillonController@show] Tentative d'accès non autorisé à l'échantillon #{$echantillon->id} par l'utilisateur #{$user->id}. L'échantillon est assigné à {$echantillon->utilisateur_id}.");
             return redirect()->route('echantillons.index')->with('error', "Vous n'êtes pas autorisé à voir les détails de cet échantillon.");
         }

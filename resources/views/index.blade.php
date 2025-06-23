@@ -118,8 +118,25 @@
                                         <li class="list-group-item"><strong>🌍 منطقة CNSS:</strong> {{ $echantillon->entreprise->localite_cnss ?? 'غير متوفر' }}</li>
                                         {{-- FIN DES NOUVEAUX CHAMPS --}}
                                         <li class="list-group-item"><strong>📊 حالة العينة:</strong> 
-                                            <span id="statutDisplay" style="cursor: pointer;" class="badge @if($echantillon->statut == 'répondu' || $echantillon->statut == 'termine') badge-success @elseif($echantillon->statut == 'réponse partielle') badge-warning @elseif($echantillon->statut == 'un rendez-vous') badge-info @elseif($echantillon->statut == 'pas de réponse') badge-secondary @elseif($echantillon->statut == 'refus') badge-danger @elseif($echantillon->statut == 'introuvable') badge-dark @else badge-primary @endif">
-                                                {{ $echantillon->statut == 'répondu' ? 'تم الرد' : ($echantillon->statut == 'termine' ? 'مكتمل' : ($echantillon->statut == 'réponse partielle' ? 'رد جزئي' : ($echantillon->statut == 'un rendez-vous' ? 'موعد' : ($echantillon->statut == 'pas de réponse' ? 'لا رد' : ($echantillon->statut == 'refus' ? 'رفض' : ($echantillon->statut == 'introuvable' ? 'غير موجود' : 'في الانتظار')))))) }}
+                                            @php
+                                                // On définit la classe et le texte du badge en fonction du statut
+                                                $statut = $echantillon->statut;
+                                                $badgeClass = '';
+                                                $statutText = '';
+
+                                                if ($statut == 'répondu') { $badgeClass = 'badge-success'; $statutText = 'تم الرد'; }
+                                                elseif ($statut == 'termine') { $badgeClass = 'badge-success'; $statutText = 'مكتمل'; }
+                                                elseif ($statut == 'réponse partielle') { $badgeClass = 'badge-warning'; $statutText = 'رد جزئي'; }
+                                                elseif ($statut == 'un rendez-vous') { $badgeClass = 'badge-info'; $statutText = 'موعد'; }
+                                                elseif ($statut == 'à appeler') { $badgeClass = 'badge-primary'; $statutText = 'إعادة إتصال'; } // <-- NOUVELLE CONDITION
+                                                elseif ($statut == 'pas de réponse') { $badgeClass = 'badge-secondary'; $statutText = 'لا رد'; }
+                                                elseif ($statut == 'refus' || $statut == 'refus final') { $badgeClass = 'badge-danger'; $statutText = 'رفض'; }
+                                                elseif ($statut == 'introuvable') { $badgeClass = 'badge-dark'; $statutText = 'غير موجود'; }
+                                                else { $badgeClass = 'badge-light'; $statutText = 'في الانتظار'; }
+                                            @endphp
+
+                                            <span class="badge {{ $badgeClass }}">
+                                                {{ $statutText }}
                                             </span>
                                         </li>
                                         <li class="list-group-item"><strong>⭐ الأولوية:</strong> {{ $echantillon->priorite ?? 'غير محددة' }}</li>
@@ -138,24 +155,26 @@
                                     </form>
                                     @if($peutLancerAppel ?? false)
                                         <button id="btnLancerAppel" class="btn btn-success btn-lg mb-2" style="width: 100%;" data-echantillon-id="{{ $echantillon->id }}"><i class="typcn typcn-phone-outgoing ml-1"></i> بدء المكالمة</button>
-                                        {{-- ... à l'intérieur de @if($peutLancerAppel ?? false) ... --}}
-                                <div id="appelActions" style="display: none; width: 100%;">
-                                    <div class="btn-group mb-2" role="group" style="width: 100%;">
-                                        <button id="btnAjouterRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c; flex-grow: 1;"><i class="typcn typcn-calendar ml-1"></i> إضافة موعد</button>
-                                        <button id="btnVoirScript" class="btn btn-warning" style="background-color: #f39c12; border-color: #f39c12; flex-grow: 1;"><i class="typcn typcn-document-text ml-1"></i> عرض نص المكالمة</button>
-                                        <button id="btnVoirQuestionnaire" class="btn btn-secondary" style="background-color: #95a5a6; border-color: #95a5a6; color:white; flex-grow: 1;"><i class="typcn typcn-document-add ml-1"></i> الاستبيان</button>
-                                        <button id="btnRefusAppel" class="btn btn-danger" style="display: none; flex-grow: 1;"><i class="typcn typcn-user-delete ml-1"></i> رفض</button> 
-                                    </div>
+                                       {{-- ... à l'intérieur de @if($peutLancerAppel ?? false) ... --}}
+<div id="appelActions" style="display: none; width: 100%;">
+    <div class="btn-group mb-2" role="group" style="width: 100%;">
+        <button id="btnAjouterRendezVous" class="btn btn-info" style="background-color: #1abc9c; border-color: #1abc9c; flex-grow: 1;"><i class="typcn typcn-calendar ml-1"></i> إضافة موعد</button>
+        <button id="btnVoirScript" class="btn btn-warning" style="background-color: #f39c12; border-color: #f39c12; flex-grow: 1;"><i class="typcn typcn-document-text ml-1"></i> عرض نص المكالمة</button>
+        
+        @if(isset($echantillon) && $echantillon->id)
+            <button id="btnOuvrirModalAjoutSuivi" type="button" class="btn btn-secondary" style="background-color: #95a5a6; border-color: #95a5a6; color:white; flex-grow: 1;" data-echantillon-id="{{ $echantillon->id }}">
+                <i class="fas fa-history ml-1"></i> إعادة اتصال
+            </button>
+        @endif
 
-                                    {{-- ✅ NOUVEAU BOUTON "AJOUTER SUIVI" (remplace l'ancien #btnRelance ou s'ajoute) --}}
-                                    @if(isset($echantillon) && $echantillon->id) {{-- S'assurer que $echantillon est disponible --}}
-                                        <button id="btnOuvrirModalAjoutSuivi" type="button" class="btn btn-outline-primary btn-block" 
-                                                data-echantillon-id="{{ $echantillon->id }}">
-                                            <i class="fas fa-history" style="margin-left: 8px;"></i> إضافة متابعة / إعادة اتصال
-                                        </button>
-                                    @endif
-                                    {{-- FIN NOUVEAU BOUTON --}}
-                                </div>
+        <button id="btnRefusAppel" class="btn btn-danger" style="display: none; flex-grow: 1;"><i class="typcn typcn-user-delete ml-1"></i> رفض</button> 
+    </div>
+
+    <button id="btnVoirQuestionnaire" class="btn btn-outline-primary btn-block">
+        <i class="typcn typcn-document-add ml-1"></i> الاستبيان
+    </button>
+</div>
+{{-- ... --}}
                                 {{-- ... --}}
                                     @else
                                         <p class="text-muted mt-2">لا يمكن بدء المكالمة لهذه العينة.</p>
@@ -571,20 +590,43 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
                 if (typeof $ !== 'undefined' && $('#statutModal').modal) $('#statutModal').modal('hide');
 
                 if (response.ok && data.success) {
-                    const statutDisplayElement = document.getElementById('statutDisplay');
-                    if (statutDisplayElement) {
-                        let statutText = statut; let badgeClass = 'badge-primary';
-                        if (statut === 'répondu' || statut === 'termine') { statutText = (statut === 'termine' ? 'مكتمل' : 'تم الرد'); badgeClass = 'badge-success'; }
-                        else if (statut === 'réponse partielle') { statutText = 'رد جزئي'; badgeClass = 'badge-warning'; }
-                        else if (statut === 'un rendez-vous') { statutText = 'موعد'; badgeClass = 'badge-info'; }
-                        else if (statut === 'pas de réponse') { statutText = 'لا رد'; badgeClass = 'badge-secondary'; }
-                        else if (statut === 'refus') { statutText = 'رفض'; badgeClass = 'badge-danger'; }
-                        else if (statut === 'introuvable') { statutText = 'غير موجود'; badgeClass = 'badge-dark'; }
-                        else if (statut === 'en attente') { statutText = 'في الانتظار'; badgeClass = 'badge-primary';}
-                        statutDisplayElement.textContent = statutText;
-                        statutDisplayElement.className = 'badge ' + badgeClass; 
-                    }
-                    showFeedback(data.message || 'تم تحديث حالة العينة بنجاح!');
+    const statutDisplayElement = document.getElementById('statutDisplay');
+    if (statutDisplayElement) {
+        let statutText = statut; 
+        let badgeClass = 'badge-light'; // Un défaut sûr
+
+        if (statut === 'répondu' || statut === 'termine') { 
+            statutText = (statut === 'termine' ? 'مكتمل' : 'تم الرد');
+            badgeClass = 'badge-success';
+        } else if (statut === 'réponse partielle') {
+            statutText = 'رد جزئي';
+            badgeClass = 'badge-warning';
+        } else if (statut === 'un rendez-vous') {
+            statutText = 'موعد';
+            badgeClass = 'badge-info';
+        } else if (statut === 'à appeler') { // <-- NOUVELLE CONDITION
+            statutText = 'إعادة إتصال';
+            badgeClass = 'badge-primary';
+        } else if (statut === 'pas de réponse') {
+            statutText = 'لا رد';
+            badgeClass = 'badge-secondary';
+        } else if (statut === 'refus' || statut === 'refus final') {
+            statutText = 'رفض';
+            badgeClass = 'badge-danger';
+        } else if (statut === 'introuvable') {
+            statutText = 'غير موجود';
+            badgeClass = 'badge-dark';
+        } else { // 'en attente' ou autre
+            statutText = 'في الانتظار';
+            badgeClass = 'badge-primary';
+        }
+        
+        statutDisplayElement.textContent = statutText;
+        statutDisplayElement.className = 'badge ' + badgeClass;
+        // On ré-attache le style et l'attribut pour la modale
+        statutDisplayElement.style.cursor = 'pointer'; 
+    }
+    showFeedback(data.message || 'تم تحديث حالة العينة بنجاح!');
                 } else { 
                     showFeedback(data.message || 'حدث خطأ أثناء تحديث حالة العينة.', 'danger'); 
                 }
@@ -667,9 +709,7 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
         setupModalButton('btnTelephoneModal', '#telephoneModal');
         setupModalButton('btnEmailModal', '#emailModal');
         setupModalButton('btnContactModal', '#contactModal');
-        if (document.getElementById('statutDisplay')) {
-            setupModalButton('statutDisplay', '#statutModal'); 
-        }
+        
         
        function updateCallUI(calling, appelData = null) {
     console.log(`🔄 updateCallUI - Appel en cours demandé: ${calling}, Données d'appel reçues:`, appelData);

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('appels', function (Blueprint $table) {
-            // Ajoute une colonne pour l'ID du téléphone utilisé, si disponible
-            $table->foreignId('telephone_utilise_id')->nullable()->after('utilisateur_id')->constrained('telephones_entreprises')->onDelete('set null');
+            // Ligne corrigée
+$table->foreignId('telephone_utilise_id')->nullable()->constrained('telephones_entreprises');
             
             // Ajoute une colonne pour stocker le numéro exact qui a été composé
             $table->string('numero_compose')->nullable()->after('telephone_utilise_id');

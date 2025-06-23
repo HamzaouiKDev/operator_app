@@ -12,9 +12,12 @@ use App\Http\Controllers\TelephoneController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\RendezVousController;
 use App\Http\Controllers\EchantillonController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StatistiquesController;
+use App\Http\Controllers\Admin\EnqueteController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EntrepriseImportController;
+use App\Http\Controllers\Admin\EchantillonImportController;
 
 
 /*
@@ -64,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/entreprises/import/store-telephones', [EntrepriseImportController::class, 'storeTelephones'])->name('entreprises.import.telephones');
         Route::post('/admin/entreprises/import/emails', [EntrepriseImportController::class, 'storeEmails'])->name('entreprises.import.emails');
         Route::post('/entreprises/import', [EntrepriseImportController::class, 'store'])->name('entreprises.import.store');
+         // AJOUT : ROUTES POUR L'IMPORT DES ÉCHANTILLONS
+        Route::get('/echantillons/import', [EchantillonImportController::class, 'create'])->name('echantillons.import.form');
+        Route::post('/echantillons/import', [EchantillonImportController::class, 'store'])->name('echantillons.import.store');
+        Route::resource('enquetes', EnqueteController::class);
 
     });
 
@@ -121,6 +128,11 @@ Route::middleware(['auth'])->group(function () {
 
         // --- Statistiques ---
         Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
+        // --- Route du flux SSE pour les notifications (MAINTENANT DANS CE GROUPE) ---
+        // Ceci garantit que seuls les utilisateurs avec le rôle 'Téléopérateur' peuvent y accéder.
+       // Route::get('/notifications-stream', [NotificationController::class, 'streamUpcomingRendezVous'])
+         //   ->name('notifications.stream');
+
 
     });
 });
@@ -170,7 +182,7 @@ Route::get('/verification-php-info', function () {
 // Route::post('/entreprise/{entreprise_id}/contact', [EnterpriseDetailsController::class, 'storeContact'])->name('entreprise.contact.store');
 // Route::post('/entreprise/rendezvous/{echantillon_enquete_id}', [EnterpriseDetailsController::class, 'storeRendezVous'])->name('entreprise.rendezvous.store');
 // Route::get('/{page}', [AdminController::class, 'index']);
-// Route::get('/entreprises/{entreprise}', [RendezVousController::class, 'showEntreprisePage'])->name('entreprise.show');
+//Route::get('/entreprises/{entreprise}', [RendezVousController::class, 'showEntreprisePage'])->name('entreprise.show');
 // Route::post('/relance/store', [SuiviController::class, 'store'])->name('relance.store'); // Probablement un doublon de suivis.store
 
 
