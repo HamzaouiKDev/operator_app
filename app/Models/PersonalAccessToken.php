@@ -13,5 +13,5 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
      *
      * @var string
      */
-    protected $dateFormat = 'Y-m-d H:i:s.v';
+     protected $dateFormat = 'Ymd H:i:s';
 }

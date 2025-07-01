@@ -24,7 +24,7 @@ class RolesAndUsersSeeder extends Seeder
 
         // 2. Créer l'utilisateur Administrateur (un compte fixe et connu)
         $adminUser = User::firstOrCreate(
-            ['email' => 'admin@exemple.com'], // On le cherche par son email
+            ['email' => 'admin@ins.com'], // On le cherche par son email
             [ // Données à utiliser s'il n'existe pas
                 'name' => 'Administrateur Principal',
                 'password' => bcrypt('password') // Mot de passe par défaut
@@ -33,11 +33,7 @@ class RolesAndUsersSeeder extends Seeder
         // On lui assigne UNIQUEMENT le rôle Admin
         $adminUser->syncRoles($adminRole);
 
-        // 3. Créer 4 utilisateurs Téléopérateurs avec des données aléatoires
-        // On utilise la factory pour générer des utilisateurs proprement
-        User::factory()->count(4)->create()->each(function ($user) use ($teleopRole) {
-            // Pour chaque utilisateur créé, on lui assigne le rôle Téléopérateur
-            $user->assignRole($teleopRole);
-        });
+       
+        
     }
 }

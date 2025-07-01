@@ -45,6 +45,10 @@ RUN pecl install sqlsrv pdo_sqlsrv \
 
 # Installation de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# ====================================================================
+# LIGNE DE TEST À AJOUTER :
+RUN echo ">>>>>> PREUVE : JE RECONSTRUIS BIEN L'IMAGE MAINTENANT <<<<<<"
+# ====================================================================
 
 # Création d'un utilisateur et d'un groupe non-root
 RUN groupadd -g ${GID} laravel && \

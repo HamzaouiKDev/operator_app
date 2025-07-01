@@ -61,6 +61,102 @@
         .company-details-card .list-group-item strong {
             color: #343a40; /* Un gris foncé. Ajustez si nécessaire. */
         }
+        /* ================================================================== */
+    /* == NOUVEAUX STYLES POUR UN AFFICHAGE PROFESSIONNEL DES DÉTAILS == */
+    /* ================================================================== */
+
+    /* Style général pour les cartes de détails */
+    .details-card {
+        border-left: 4px solid #3498db;
+        border-radius: 8px;
+        overflow: hidden; /* Assure que les coins arrondis s'appliquent partout */
+    }
+    .details-card .card-header {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Styles pour la liste des détails principaux */
+    .details-list .list-group-item {
+    display: flex;
+    /* La ligne justify-content: space-between; a été supprimée */
+    align-items: center; /* On garde l'alignement vertical */
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease-in-out;
+}
+    .details-list .list-group-item:last-child {
+        border-bottom: none;
+    }
+    .details-list .list-group-item:hover {
+        background-color: #f8f9fa; /* Un gris très léger au survol */
+    }
+
+    /* Style pour l'icône et le label (ex: "Nom de l'entreprise") */
+    .item-label {
+        display: flex;
+        align-items: center;
+        color: #555; /* Couleur du texte du label */
+       min-width: 220px;
+       gap: 15px;
+    }
+    .item-label .item-icon {
+        font-size: 1.1rem;
+        margin-right: 15px; /* Espace entre l'icône et le texte */
+        color: #007bff; /* Couleur de l'icône */
+        width: 20px; /* Largeur fixe pour un alignement parfait */
+        text-align: center;
+       
+    }
+    .item-label strong {
+        font-weight: 800; /* Un peu plus gras */
+    }
+
+    /* Style pour la valeur (ex: "Nom de l'Entreprise ABC") */
+    .item-value {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #333;
+        text-align: left; /* Assure que le texte est aligné à gauche de son conteneur */
+    }
+    .item-value .badge {
+        font-size: 0.9rem; /* Badge un peu plus grand */
+        padding: 0.4em 0.8em;
+    }
+
+    /* Styles spécifiques pour les cartes Téléphone, Email, Contacts */
+    .sub-details-list .list-group-item {
+        flex-wrap: wrap; /* Permet aux éléments de passer à la ligne sur mobile */
+        padding: 0.8rem 1rem;
+    }
+    .sub-details-content {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+    }
+    .sub-details-badges {
+        margin-left: auto; /* Pousse les badges à droite */
+        padding-left: 10px; /* Espace avec le contenu */
+    }
+    .sub-details-badges .badge {
+        margin: 0 2px;
+    }
+    .sub-details-list .item-icon {
+        color: #555;
+    }
+    .sub-details-list a {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: 600;
+    }
+    .sub-details-list a:hover {
+        text-decoration: underline;
+    }
+    
+    /* Couleurs des cartes secondaires */
+    .details-card-phone { border-left-color: #3498db; }
+    .details-card-email { border-left-color: #e74c3c; }
+    .details-card-contact { border-left-color: #2ecc71; }
+
 
     </style>
 @endsection
@@ -99,54 +195,125 @@
                     </div>
                     <div class="card-body text-right">
                         @if(isset($echantillon) && $echantillon && $echantillon->entreprise)
-                            <div class="card border-primary mb-3 company-details-card" style="border-width: 2px;">
-                                <div class="card-body">
-                                    <h5 class="card-title text-primary">📋 معلومات الشركة</h5>
-                                    <ul class="list-group list-group-flush text-right">
-                                        <li class="list-group-item"><strong>🏢 اسم الشركة:</strong> {{ $echantillon->entreprise->nom_entreprise }}</li>
-                                        {{-- NOUVEAUX CHAMPS AJOUTÉS --}}
-                                        <li class="list-group-item"><strong>🔢 الرمز الوطني:</strong> {{ $echantillon->entreprise->code_national ?? 'غير متوفر' }}</li>
-                                        <li class="list-group-item"><strong>🔧 النشاط:</strong> {{ $echantillon->entreprise->libelle_activite }}</li>
-                                        <li class="list-group-item">
-                                            <strong>📍 العنوان:</strong>
-                                            {{ $echantillon->entreprise->numero_rue }} {{ $echantillon->entreprise->nom_rue }},
-                                            {{ $echantillon->entreprise->ville }},
-                                            {{-- MODIFICATION ICI : Accède à la relation 'gouvernorat' et à sa colonne 'nom' --}}
-                                            {{ $echantillon->entreprise->gouvernorat->nom ?? 'غير متوفر' }}
-                                        </li>                                        <li class="list-group-item"><strong>🔖 حالة الشركة:</strong> {{ $echantillon->entreprise->statut ?? 'غير متوفر' }}</li>
-                                        <li class="list-group-item"><strong>📜 عنوان CNSS:</strong> {{ $echantillon->entreprise->adresse_cnss ?? 'غير متوفر' }}</li>
-                                        <li class="list-group-item"><strong>🌍 منطقة CNSS:</strong> {{ $echantillon->entreprise->localite_cnss ?? 'غير متوفر' }}</li>
-                                        {{-- FIN DES NOUVEAUX CHAMPS --}}
-                                        <li class="list-group-item"><strong>📊 حالة العينة:</strong> 
-                                            @php
-                                                // On définit la classe et le texte du badge en fonction du statut
+                        <div class="card border-0 mb-3 shadow-sm details-card company-details-card">
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush details-list">
+
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon fas fa-building"></i>
+                    <strong>اسم الشركة</strong>
+                </div>
+                <span class="item-value">{{ $echantillon->entreprise->nom_entreprise }}</span>
+            </div>
+
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon fas fa-hashtag"></i>
+                    <strong>الرمز الوطني</strong>
+                </div>
+                <span class="item-value">{{ $echantillon->entreprise->id ?? 'غير متوفر' }}</span>
+            </div>
+
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon fas fa-briefcase"></i>
+                    <strong>النشاط</strong>
+                </div>
+                <span class="item-value text-wrap">{{ $echantillon->entreprise->libelle_activite }}</span>
+            </div>
+
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon fas fa-barcode"></i>
+                    <strong>رمز النشاط</strong>
+                </div>
+                <span class="item-value">{{ $echantillon->entreprise->code_national }}</span>
+            </div>
+
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon fas fa-map-marker-alt"></i>
+                    <strong>العنوان</strong>
+                </div>
+                <span class="item-value text-wrap">
+                    {{ $echantillon->entreprise->numero_rue }} {{ $echantillon->entreprise->nom_rue }},
+                    {{ $echantillon->entreprise->ville }},
+                    {{ $echantillon->entreprise->gouvernorat->nom ?? 'غير متوفر' }}
+                </span>
+            </div>
+
+            
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon far fa-address-card"></i>
+                    <strong>عنوان CNSS</strong>
+                </div>
+                <span class="item-value text-wrap">{{ $echantillon->entreprise->adresse_cnss ?? 'غير متوفر' }}</span>
+            </div>
+
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon fas fa-globe-africa"></i>
+                    <strong>منطقة CNSS</strong>
+                </div>
+                <span class="item-value">{{ $echantillon->entreprise->localite_cnss ?? 'غير متوفر' }}</span>
+            </div>
+
+            <div class="list-group-item">
+                <div class="item-label">
+                    <i class="item-icon fas fa-chart-line"></i>
+                    <strong>حالة العينة</strong>
+                </div>
+                <span class="item-value">
+                     @php
                                                 $statut = $echantillon->statut;
                                                 $badgeClass = '';
                                                 $statutText = '';
 
-                                                if ($statut == 'répondu') { $badgeClass = 'badge-success'; $statutText = 'تم الرد'; }
-                                                elseif ($statut == 'termine') { $badgeClass = 'badge-success'; $statutText = 'مكتمل'; }
-                                                elseif ($statut == 'réponse partielle') { $badgeClass = 'badge-warning'; $statutText = 'رد جزئي'; }
-                                                elseif ($statut == 'un rendez-vous') { $badgeClass = 'badge-info'; $statutText = 'موعد'; }
-                                                elseif ($statut == 'à appeler') { $badgeClass = 'badge-primary'; $statutText = 'إعادة إتصال'; } // <-- NOUVELLE CONDITION
-                                                elseif ($statut == 'pas de réponse') { $badgeClass = 'badge-secondary'; $statutText = 'لا رد'; }
-                                                elseif ($statut == 'refus' || $statut == 'refus final') { $badgeClass = 'badge-danger'; $statutText = 'رفض'; }
-                                                elseif ($statut == 'introuvable') { $badgeClass = 'badge-dark'; $statutText = 'غير موجود'; }
-                                                else { $badgeClass = 'badge-light'; $statutText = 'في الانتظار'; }
+                                                if ($statut == 'Complet' || $statut == 'termine') { // Gère 'Complet' et 'termine'
+                                                    $badgeClass = 'badge-success'; 
+                                                    $statutText = 'مكتمل';
+                                                } 
+                                                elseif ($statut == 'répondu') { 
+                                                    $badgeClass = 'badge-success'; 
+                                                    $statutText = 'تم الرد'; 
+                                                } 
+                                                elseif ($statut == 'réponse partielle') { 
+                                                    $badgeClass = 'badge-warning'; 
+                                                    $statutText = 'رد جزئي'; 
+                                                } 
+                                                elseif ($statut == 'un rendez-vous') { 
+                                                    $badgeClass = 'badge-info'; 
+                                                    $statutText = 'موعد'; 
+                                                } 
+                                                elseif ($statut == 'à appeler') { 
+                                                    $badgeClass = 'badge-primary'; 
+                                                    $statutText = 'إعادة إتصال'; 
+                                                } 
+                                                elseif ($statut == 'pas de réponse') { 
+                                                    $badgeClass = 'badge-secondary'; 
+                                                    $statutText = 'لا رد'; 
+                                                } 
+                                                elseif ($statut == 'refus' || $statut == 'refus final') { // Gère 'refus' et 'refus final'
+                                                    $badgeClass = 'badge-danger';
+                                                    $statutText = ($statut == 'refus final') ? 'رفض كلي' : 'رفض';
+                                                } 
+                                                elseif ($statut == 'introuvable') { 
+                                                    $badgeClass = 'badge-dark'; 
+                                                    $statutText = 'غير موجود'; 
+                                                } 
+                                                else { // 'en attente' ou autre statut par défaut
+                                                    $badgeClass = 'badge-light'; 
+                                                    $statutText = 'في الانتظار'; 
+                                                }
                                             @endphp
-
-                                            <span class="badge {{ $badgeClass }}">
-                                                {{ $statutText }}
-                                            </span>
-                                        </li>
-                                        <li class="list-group-item"><strong>⭐ الأولوية:</strong> {{ $echantillon->priorite ?? 'غير محددة' }}</li>
-                                        <li class="list-group-item"><strong>🆔 رقم العينة:</strong> #{{ $echantillon->id }}</li>
-                                        {{-- Optionnel: Afficher les timestamps si besoin --}}
-                                        {{-- <li class="list-group-item"><strong>⏳ تاريخ الإنشاء:</strong> {{ $echantillon->entreprise->created_at ? $echantillon->entreprise->created_at->format('d/m/Y H:i') : 'غير متوفر' }}</li> --}}
-                                        {{-- <li class="list-group-item"><strong>🔄 تاريخ آخر تحديث:</strong> {{ $echantillon->entreprise->updated_at ? $echantillon->entreprise->updated_at->format('d/m/Y H:i') : 'غير متوفر' }}</li> --}}
-                                    </ul>
-                                </div>
-                            </div>
+                    <span class="badge {{ $badgeClass }}">{{ $statutText }}</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
                             <div class="mt-4 text-center">
                                 <div class="btn-group-vertical" role="group" style="width: 100%;">
                                     <form id="formEchantillonSuivant" action="{{ route('echantillons.next') }}" method="POST" style="display: block; width:100%;">
@@ -170,9 +337,18 @@
         <button id="btnRefusAppel" class="btn btn-danger" style="display: none; flex-grow: 1;"><i class="typcn typcn-user-delete ml-1"></i> رفض</button> 
     </div>
 
-    <button id="btnVoirQuestionnaire" class="btn btn-outline-primary btn-block">
+    {{-- VÉRIFIEZ QUE CE BOUTON EST BIEN DANS LA BOUCLE @if(isset($echantillon) ... ) --}}
+@if(isset($echantillon) && $echantillon->entreprise)
+    <button id="btnVoirQuestionnaire" 
+            class="btn btn-outline-primary btn-block"
+            {{-- Ici nous ajoutons les données dynamiques --}}
+            data-id-echantillon="{{ $echantillon->id }}"
+            data-code-national="{{ $echantillon->entreprise->code_national }}"
+            data-raison-sociale="{{ $echantillon->entreprise->nom_entreprise }}"
+            data-id-utilisateur="{{ Auth::user()->id }}">
         <i class="typcn typcn-document-add ml-1"></i> الاستبيان
     </button>
+@endif
 </div>
 {{-- ... --}}
                                 {{-- ... --}}
@@ -261,14 +437,15 @@
                                             <tr><td>
                             {{-- Le lien contient maintenant toutes les données nécessaires --}}
                            <a href="#" class="clickable-email text-primary font-weight-bold"
-                               data-email="{{ $email->email }}"
-                               data-sujet="{{ $echantillon->enquete->titre_mail ?? 'Sujet par défaut' }}"
-                               data-corps="{{ $echantillon->enquete->corps_mail ?? '' }}"
-                               data-piecejointe="{{ $echantillon->enquete->piece_jointe_path ?? '' }}"
-                               style="text-decoration: none; word-break: break-all; font-size: 14px;">
-                                <i class="fas fa-paper-plane" style="margin-left: 8px;"></i>{{-- Icône d'envoi et espace --}}
-                                {{ $email->email }}
-                            </a>
+                                data-email="{{ $email->email }}"
+                                data-sujet-fr="{{ $echantillon->enquete->titre_mail_fr ?? '' }}"
+                                data-corps-fr="{{ $echantillon->enquete->corps_mail_fr ?? '' }}"
+                                data-sujet-ar="{{ $echantillon->enquete->titre_mail_ar ?? '' }}"
+                                data-corps-ar="{{ $echantillon->enquete->corps_mail_ar ?? '' }}"
+                                data-piecejointe="{{ $echantillon->enquete->piece_jointe_path ?? '' }}"
+                                style="text-decoration: none; word-break: break-all; font-size: 14px;">
+                                    <i class="fas fa-paper-plane" style="margin-left: 8px;"></i>{{ $email->email }}
+                                </a>
                         </td>
 <td>{{ $email->source ?? 'غير محدد' }}</td><td>@if($email->est_primaire)<span class="badge badge-success">نعم</span>@else<span class="badge badge-secondary">لا</span>@endif</td></tr>
                                         @endforeach
@@ -289,14 +466,36 @@
                             @else
                                 <div class="table-responsive">
                                     <table class="table table-striped mg-b-0 text-md-nowrap">
-                                        <thead><tr><th class="tx-14 fw-bold">الاسم</th><th class="tx-14 fw-bold">المنصب</th><th class="tx-14 fw-bold">الهاتف (الرئيسي)</th></tr></thead>
-                                        <tbody>
+                                            <thead>
+                                                <tr>
+                                                    <th class="tx-14 fw-bold">الاسم</th>
+                                                    <th class="tx-14 fw-bold">المنصب</th>
+                                                    <th class="tx-14 fw-bold">الهاتف</th>
+                                                    <th class="tx-14 fw-bold">البريد الإلكتروني</th>
+                                                </tr>
+                                            </thead>                                        <tbody>
                                         @foreach($echantillon->entreprise->contacts as $contact)
-                                            <tr>
-                                                <td><strong>{{ $contact->prenom }} {{ $contact->nom }}</strong></td>
-                                                <td>{{ $contact->poste ?? 'غير محدد' }}</td>
-                                                <td>{{ $contact->telephone ?? 'غير محدد' }}</td>
-                                            </tr>
+                                               {{-- NOUVEAU CODE --}}
+<tr>
+    <td><strong>{{ $contact->prenom }} {{ $contact->nom }}</strong></td>
+    <td>{{ $contact->poste ?? 'غير محدد' }}</td>
+    <td>{{ $contact->telephone ?? 'غير محدد' }}</td>
+    <td>
+        @if($contact->email)
+            {{-- Ce lien est la clé. Il a la classe 'clickable-email' et les données de l'enquête. --}}
+            <a href="#" class="clickable-email text-primary font-weight-bold"
+               data-email="{{ $contact->email }}"
+               data-sujet-fr="{{ $echantillon->enquete->titre_mail_fr ?? '' }}"
+               data-corps-fr="{{ $echantillon->enquete->corps_mail_fr ?? '' }}"
+               data-sujet-ar="{{ $echantillon->enquete->titre_mail_ar ?? '' }}"
+               data-corps-ar="{{ $echantillon->enquete->corps_mail_ar ?? '' }}">
+                <i class="fas fa-paper-plane" style="margin-left: 8px;"></i>{{ $contact->email }}
+            </a>
+        @else
+            <span class="text-muted">غير متوفر</span>
+        @endif
+    </td>
+</tr>
                                         @endforeach
                                         </tbody>
                                     </table>
@@ -364,7 +563,7 @@
                             <option value="">اختر سبب المتابعة</option>
                             <option value="Réponse absente">ليس هناك رد</option>
                             <option value="Personne non adéquate">لم أجد الشخص المناسب للإجابة</option>
-                            <option value="Rappel demandé par client">طلب الزبون إعادة الاتصال</option>
+                            <option value="Rappel demandé par client">إعادة الاتصال بطلب من المجيب  </option>
                             <option value="Information manquante">معلومات ناقصة</option>
                             <option value="Autre">أسباب أخرى</option>
                         </select>
@@ -461,84 +660,248 @@
             <div class="modal fade" id="emailModal" tabindex="-1" role="dialog" aria-labelledby="emailModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background-color: #e74c3c; color: white;"><h5 class="modal-title" id="emailModalLabel">إضافة بريد إلكتروني جديد</h5><button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-right"><form action="{{ route('emails.store', ['entreprise_id' =>$echantillon->entreprise->id]) }}" method="POST">@csrf<div class="form-group"><label for="emailAddr">عنوان البريد الإلكتروني <span class="text-danger">*</span></label><input type="email" class="form-control" id="emailAddr" name="email" placeholder="أدخل عنوان البريد الإلكتروني" required><small class="form-text text-muted">مثال: info@company.com</small></div><div class="form-group"><label for="sourceEmailModal">المصدر (اختياري)</label><select class="form-control" id="sourceEmailModal" name="source"><option value="">اختر المصدر</option><option value="موقع_الشركة">موقع الشركة</option><option value="دليل_الأعمال">دليل الأعمال</option><option value="أخرى">أخرى</option></select></div><div class="form-check"><input type="checkbox" class="form-check-input" id="estPrimaireEmailModal" name="est_primaire" value="1"><label class="form-check-label" for="estPrimaireEmailModal">بريد إلكتروني أساسي</label><small class="form-text text-muted">حدد إذا كان هذا هو البريد الرئيسي.</small></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button><button type="submit" class="btn btn-danger" style="background-color: #e74c3c; border-color: #e74c3c;">حفظ البريد</button></div></form></div></div></div></div>
             
             {{-- Modale Contact (pour ajouter un contact à l'entreprise) --}}
-            <div class="modal fade" id="contactModal" tabindex="-1" role="dialog" aria-labelledby="contactModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background-color: #2ecc71; color: white;"><h5 class="modal-title" id="contactModalLabel">إضافة جهة اتصال جديدة</h5><button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-right"><form action="{{ route('contacts.store', ['entreprise_id' => $echantillon->entreprise->id]) }}" method="POST">@csrf<div class="form-group"><label for="civiliteContact">اللقب (اختياري)</label><input type="text" class="form-control" id="civiliteContact" name="civilite" placeholder="مثل: السيد، السيدة"></div><div class="form-group"><label for="prenomContact">الاسم الأول <span class="text-danger">*</span></label><input type="text" class="form-control" id="prenomContact" name="prenom" required placeholder="أدخل الاسم الأول"></div><div class="form-group"><label for="nomContact">الاسم الأخير <span class="text-danger">*</span></label><input type="text" class="form-control" id="nomContact" name="nom" required placeholder="أدخل الاسم الأخير"></div><div class="form-group"><label for="posteContact">المنصب (اختياري)</label><input type="text" class="form-control" id="posteContact" name="poste" placeholder="مثل: مدير، موظف"></div><div class="form-group"><label for="emailContactModal">البريد الإلكتروني (اختياري)</label><input type="email" class="form-control" id="emailContactModal" name="email" placeholder="أدخل البريد الإلكتروني"></div><div class="form-group"><label for="telephoneContact">رقم الهاتف (اختياري)</label><input type="text" class="form-control" id="telephoneContact" name="telephone" placeholder="أدخل رقم الهاتف"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button><button type="submit" class="btn btn-success" style="background-color: #2ecc71; border-color: #2ecc71;">حفظ جهة الاتصال</button></div></form></div></div></div></div>
-            
-            {{-- Modale Script d'Appel --}}
-            <div class="modal fade" id="appelScriptModal" tabindex="-1" role="dialog" aria-labelledby="appelScriptModalLabel" aria-hidden="true"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header" style="background-color: #2ecc71; color: white;"><h5 class="modal-title" id="appelScriptModalLabel">نص المكالمة الهاتفية</h5><button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button></div><div class="modal-body text-right"><div class="mb-3"><button id="switchToArabic" class="btn btn-primary" style="background-color: #3498db; border-color: #3498db;">عربي</button><button id="switchToFrench" class="btn btn-secondary">Français</button></div><div style="background-color: white; padding: 20px; border-radius: 5px; border: 1px solid #ddd; height: 400px; overflow-y: auto;"><div id="scriptArabe" style="display: block;"><pre style="white-space: pre-wrap; direction: rtl; font-family: inherit; font-size: 16px; line-height: 1.6;">
+{{-- Modale Contact (MODIFIÉE) --}}
+<div class="modal fade" id="contactModal" tabindex="-1" role="dialog" aria-labelledby="contactModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #2ecc71; color: white;">
+                <h5 class="modal-title" id="contactModalLabel">إضافة جهة اتصال جديدة</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body text-right">
+                <form action="{{ route('contacts.store', ['entreprise_id' => $echantillon->entreprise->id]) }}" method="POST">
+                    @csrf
+                    <div class="form-group">
+                        <label for="civiliteContact">اللقب (اختياري)</label>
+                        {{-- MODIFICATION : Champ texte changé en liste de choix --}}
+                        <select class="form-control" id="civiliteContact" name="civilite">
+                            <option value="">اختر...</option>
+                            <option value="Monsieur">السيد</option>
+                            <option value="Madame">السيدة</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        {{-- MODIFICATION : Label traduit en arabe --}}
+                        <label for="prenomContact">الإسم <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="prenomContact" name="prenom" required placeholder="أدخل الإسم">
+                    </div>
+                    <div class="form-group">
+                        {{-- MODIFICATION : Label traduit en arabe --}}
+                        <label for="nomContact">اللقب <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nomContact" name="nom" required placeholder="أدخل اللقب">
+                    </div>
+                    <div class="form-group">
+                        <label for="posteContact">المنصب (اختياري)</label>
+                        <input type="text" class="form-control" id="posteContact" name="poste" placeholder="مثل: مدير، موظف">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailContactModal">البريد الإلكتروني (اختياري)</label>
+                        <input type="email" class="form-control" id="emailContactModal" name="email" placeholder="أدخل البريد الإلكتروني">
+                    </div>
+                    <div class="form-group">
+                        <label for="telephoneContact">رقم الهاتف (اختياري)</label>
+                        <input type="text" class="form-control" id="telephoneContact" name="telephone" placeholder="أدخل رقم الهاتف">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-success" style="background-color: #2ecc71; border-color: #2ecc71;">حفظ جهة الاتصال</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>            
+             
+            {{-- ========================================================== --}}
+            {{-- == DEBUT : MODALE DU SCRIPT D'APPEL (MIS A JOUR) == --}}
+            {{-- ========================================================== --}}
+            <div class="modal fade" id="appelScriptModal" tabindex="-1" role="dialog" aria-labelledby="appelScriptModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #2ecc71; color: white;">
+                            <h5 class="modal-title" id="appelScriptModalLabel">نص المكالمة الهاتفية</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                        <div class="modal-body text-right">
+                            <div class="mb-3">
+                                <button id="switchToArabic" class="btn btn-primary" style="background-color: #3498db; border-color: #3498db;">عربي</button>
+                                <button id="switchToFrench" class="btn btn-secondary">Français</button>
+                            </div>
+                            <div style="background-color: white; padding: 20px; border-radius: 5px; border: 1px solid #ddd; height: 400px; overflow-y: auto;">
+                                <div id="scriptArabe" style="display: block;">
+<pre style="white-space: pre-wrap; direction: rtl; font-family: inherit; font-size: 16px; line-height: 1.6;">
 <span style="color: #0066cc; font-weight: bold;">1. التقديم الأولي</span>
-مرحبًا، معاك [الاسم الكامل]، نخدم في المعهد الوطني للإحصاء. نتصل بيك في إطار البحث الوطني حول التشغيل والأجور، واللي يهدف باش نجمعو معلومات محينة على عدد العاملين، أنواع الخطط، والأجور المعتمدة في المؤسسات.
+مرحبًا، معاك [الاسم الكامل]، نخدم في المعهد الوطني للإحصاء.
+نتصل بيك في إطار البحث الوطني حول التشغيل والأجور، واللي يهدف باش نجمعو معلومات محينة على عدد العاملين، أنواع الخطط، والأجور المعتمدة في المؤسسات.
+
 <span style="color: #0066cc; font-weight: bold;">2. التحقق من المؤسسة</span>
-باش نبدأ، نحب نتأكد اللي أنا نحكي مع مؤسسة [اسم المؤسسة: {{ $echantillon->entreprise->nom_entreprise }}]؟ وإذا ماكنتش المؤسسة هاذي، تنجم تعطيني من فضلكم الاسم القانوني الكامل للمؤسسة؟ (إذا ما كانتش هي: نقفل المكالمة بطريقة لائقة. إذا نعم، نكملو.)
+باش نبدأ، نحب نتأكد اللي أنا نحكي مع مؤسسة [اسم المؤسسة: {{ $echantillon->entreprise->nom_entreprise }}]؟
+وإذا ماكنتش المؤسسة هاذي، تنجم تعطيني من فضلكم الاسم القانوني الكامل للمؤسسة؟
+(إذا ما كانتش هي: نقفل المكالمة بطريقة لائقة. إذا نعم، نكملو.)
+
 <span style="color: #0066cc; font-weight: bold;">3. طلب عنوان البريد الإلكتروني الخاص بالمؤسسة</span>
 يعطيك الصحة. باش نجم نبعتلكم إيميل تعريفي رسمي، تنجم تعطيني البريد الإلكتروني المهني متاع المؤسسة، من فضلك؟
+
 <span style="color: #0066cc; font-weight: bold;">4. البحث على الشخص المناسب</span>
-نحب نحكي مع المسؤول على الموارد البشرية، ولا أي شخص عندو فكرة على عدد العاملين والأجور في المؤسسة. تنجم تقولي شكون نجم نحكي معاه؟ ولا تحوّلني ليه، إذا ممكن؟
+نحب نحكي مع المسؤول على الموارد البشرية، ولا أي شخص عندو فكرة على عدد العاملين والأجور في المؤسسة.
+تنجم تقولي شكون نجم نحكي معاه؟ ولا تحوّلني ليه، إذا ممكن؟
+
 <span style="color: #0066cc; font-weight: bold;">5. تقديم جديد (إذا وصلنا للشخص المناسب)</span>
-(إذا تم التحويل للشخص المناسب، نعاودو التقديم.) مرحبًا، معاك [الاسم الكامل]، نخدم كـ مشغّل/مشغّلة هاتفية في المعهد الوطني للإحصاء. نتصل بيك في إطار البحث حول التشغيل والأجور، ومؤسستكم تـمّ اختيارها باش تشارك في البحث هذا. البحث إجباري، والنتائج متاعو تُستعمل فقط لأغراض إحصائية ووضع السياسات العامة. وكل المعطيات اللي باش تمدّونا بيها، باش نتعاملو معاها بكل سرية.
+(إذا تم التحويل للشخص المناسب، نعاودو التقديم.)
+مرحبًا، معاك [الاسم الكامل]، نخدم كـ مشغّل/مشغّلة هاتفية في المعهد الوطني للإحصاء.
+نتصل بيك في إطار البحث حول التشغيل والأجور، ومؤسستكم تـمّ اختيارها باش تشارك في البحث هذا.
+البحث إجباري، والنتائج متاعو تُستعمل فقط لأغراض إحصائية ووضع السياسات العامة.
+وكل المعطيات اللي باش تمدّونا بيها، باش نتعاملو معاها بكل سرية.
+
 <span style="color: #0066cc; font-weight: bold;">6. جمع المعطيات الشخصية</span>
-باش نجم نبعثلكم تفاصيل الاستبيان، نحب نطلب منكم المعطيات التالية: • الاسم واللقب • الخطة/الوظيفة • رقم الهاتف المباشر • البريد الإلكتروني المهني
+باش نجم نبعثلكم تفاصيل الاستبيان، نحب نطلب منكم المعطيات التالية:
+الاسم واللقب
+الخطة/الوظيفة
+رقم الهاتف المباشر
+البريد الإلكتروني المهني
+
 <span style="color: #0066cc; font-weight: bold;">7. إرسال الإيميل مع رابط الاستبيان</span>
 يعطيك الصحة. توّا باش نبعتلكم إيميل فيه الرابط متاع الاستبيان الإلكتروني، مع كل التوضيحات اللازمة على كل سؤال.
+
 <span style="color: #0066cc; font-weight: bold;">8. اقتراح تعبئة الاستبيان مباشرة أو تحديد موعد</span>
-تحب نعمروا الاستبيان مع بعضنا توا عبر الهاتف؟ ياخو تقريبًا بين 15 و20 دقيقة. وإلا، إذا الوقت ما يسمحش، نجموا نحددو موعد آخر يناسبكم، باش تطلعوا على الاستبيان وتحضّرو الإجابات من قبل.
+تحب نعمروا الاستبيان مع بعضنا توا عبر الهاتف؟ ياخو تقريبًا بين 15 و20 دقيقة.
+وإلا، إذا الوقت ما يسمحش، نجموا نحددو موعد آخر يناسبكم، باش تطلعوا على الاستبيان وتحضّرو الإجابات من قبل.
+
 <span style="color: #0066cc; font-weight: bold;">9. الخاتمة</span>
-إذا تم تحديد موعد: بهـي، باش نرجع نتصل بيكم نهار [اليوم] على [الساعة]. يعطيكم الصحة على تعاونكم وتفهمكم. إذا تم إجراء المقابلة مباشرة: يعطيك الصحة، نجموا نبدؤوا توا. في حال الرفض أو وضع آخر: شكرًا على وقتكم. وإذا تحتاجونا في أي وقت، ما تترددوش تتصلوا بينا. نهاركم زين!
-                                </pre></div><div id="scriptFrancais" style="display: none;"><pre style="white-space: pre-wrap; direction: ltr; font-family: inherit; font-size: 16px; line-height: 1.6;">
+إذا تم تحديد موعد:
+بهـي، باش نرجع نتصل بيكم نهار [اليوم] على [الساعة].
+يعطيكم الصحة على تعاونكم وتفهمكم.
+
+إذا تم إجراء المقابلة مباشرة:
+يعطيك الصحة، نجموا نبدؤوا توا.
+
+في حال الرفض أو وضع آخر:
+شكرًا على وقتكم. وإذا تحتاجونا في أي وقت، ما تترددوش تتصلوا بينا. نهاركم زين!
+</pre>
+                                </div>
+                                <div id="scriptFrancais" style="display: none;">
+<pre style="white-space: pre-wrap; direction: ltr; font-family: inherit; font-size: 16px; line-height: 1.6;">
 <span style="color: #0066cc; font-weight: bold;">1. Présentation initiale</span>
-Bonjour, je suis [Nom complet], je travaille à l'Institut National de la Statistique. Je vous contacte dans le cadre de l'enquête nationale sur l'emploi et les salaires.
-<span style="color: #0066cc; font-weight: bold;">2. Vérification de l'entreprise</span>
-Puis-je m'assurer que je suis bien en contact avec l'entreprise [Nom de l'entreprise: {{ $echantillon->entreprise->nom_entreprise }}] ?
-<span style="color: #0066cc; font-weight: bold;">3. Demande de l'adresse e-mail</span>
-Pourriez-vous me fournir l'adresse e-mail professionnelle de l'entreprise ?
-<span style="color: #0066cc; font-weight: bold;">4. Recherche du responsable</span>
-J'ai besoin de parler au responsable des ressources humaines.
-<span style="color: #0066cc; font-weight: bold;">5. Collecte des informations</span>
-Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de téléphone direct • Adresse e-mail professionnelle
-                                </pre></div></div><div class="form-group mt-3"><label for="notesAppel">ملاحظات المكالمة (اختياري)</label><textarea class="form-control" id="notesAppel" name="notesAppel" rows="3" placeholder="أدخل ملاحظات حول المكالمة"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button></div></div></div></div>
+Bonjour, je suis [Prénom Nom], enquêteur à l’Institut National de la Statistique. Je vous appelle dans le cadre de l’Enquête Nationale sur l’Emploi et les Salaires, qui vise à collecter des informations actualisées sur les effectifs, les types d’emplois et les rémunérations pratiquées dans les entreprises.
+
+<span style="color: #0066cc; font-weight: bold;">2. Vérification de l’entreprise</span>
+Pour commencer, puis-je confirmer que je suis bien en ligne avec [Nom de l'entreprise: {{ $echantillon->entreprise->nom_entreprise }}] ?
+Sinon, pourriez-vous s’il vous plaît me communiquer la raison sociale exacte de votre société ?
+(Si ce n’est pas l’entreprise attendue : mettre fin à l’appel poliment. Si oui, poursuivre.)
+
+<span style="color: #0066cc; font-weight: bold;">3. Demande d’adresse email de la société</span>
+Merci beaucoup. Afin de vous transmettre un courriel introductif officiel, pourriez-vous me communiquer une adresse mail professionnelle de la société, s’il vous plaît ?
+
+<span style="color: #0066cc; font-weight: bold;">4. Recherche du bon interlocuteur</span>
+J’aurais besoin de parler à la personne responsable des ressources humaines ou à toute autre personne pouvant fournir des informations sur les effectifs et les salaires.
+Pourriez-vous m’indiquer son nom ou me transférer l’appel, s’il vous plaît ?
+
+<span style="color: #0066cc; font-weight: bold;">5. Nouvelle présentation (au bon interlocuteur)</span>
+(Si transféré à la bonne personne, recommencer la présentation adaptée.)
+Bonjour, je suis [Prénom Nom], téléopérateur/trice auprès de l’Institut National de la Statistique.
+Je vous contacte dans le cadre de l’Enquête sur l’Emploi et les Salaires, à laquelle votre entreprise a été sélectionnée pour participer.
+Cette enquête est obligatoire et ses résultats sont utilisés exclusivement à des fins statistiques et de politique publique. Toutes les informations que vous nous fournirez seront traitées de manière strictement confidentielle.
+
+<span style="color: #0066cc; font-weight: bold;">6. Collecte des coordonnées</span>
+Afin de vous envoyer les détails de l’enquête, pourriez-vous me communiquer vos coordonnées complètes :
+– Nom et prénom
+– Fonction
+– Numéro de téléphone direct
+– Adresse email professionnelle
+
+<span style="color: #0066cc; font-weight: bold;">7. Envoi du mail avec le lien vers le questionnaire</span>
+Merci. Je vais immédiatement vous faire parvenir un email contenant un lien vers le questionnaire en ligne, accompagné de toutes les explications nécessaires pour chaque question.
+
+<span style="color: #0066cc; font-weight: bold;">8. Proposition de réponse immédiate ou prise de rendez-vous</span>
+Souhaitez-vous que nous le remplissions ensemble dès maintenant par téléphone ? Cela prend en moyenne 15 à 20 minutes.
+Si ce n’est pas possible tout de suite, je peux vous proposer de convenir d’un rendez-vous à un moment plus propice. Cela vous permettra également de jeter un œil au questionnaire et de préparer les réponses en amont.
+
+<span style="color: #0066cc; font-weight: bold;">9. Clôture</span>
+(Si rendez-vous fixé :)
+Parfait, je vous recontacterai donc le [jour] à [heure]. Je vous remercie pour votre disponibilité et votre collaboration.
+
+(Si l’entretien est mené immédiatement :)
+Merci, nous allons pouvoir commencer.
+
+(Si refus ou autre cas :)
+Très bien, je vous remercie pour votre temps. N’hésitez pas à nous recontacter si besoin. Bonne journée !
+</pre>
+                                </div>
+                            </div>
+                            <div class="form-group mt-3">
+                                <label for="notesAppel">ملاحظات المكالمة (اختياري)</label>
+                                <textarea class="form-control" id="notesAppel" name="notesAppel" rows="3" placeholder="أدخل ملاحظات حول المكالمة"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- ======================================================== --}}
+            {{-- == FIN : MODALE DU SCRIPT D'APPEL (MIS A JOUR) == --}}
+            {{-- ======================================================== --}}
         @endif {{-- ✅ Fin du @if qui englobe les modales conditionnelles --}}
-       
+        
 
 
     </div> {{-- Fin de .container-fluid --}}
 
   {{-- ========================================================== --}}
-{{-- ======= NOUVELLE MODALE EN ARABE POUR L'ENVOI D'EMAIL ======= --}}
+{{-- == MODALE D'ENVOI D'EMAIL (VERSION FINALE BILINGUE) == --}}
+{{-- ========================================================== --}}
+{{-- ========================================================== --}}
+{{-- == MODALE D'ENVOI D'EMAIL AVEC PRÉVISUALISATION == --}}
 {{-- ========================================================== --}}
 <div class="modal fade" id="sendEmailModal" tabindex="-1" role="dialog" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header" style="background-color: #007bff; color: white;">
-                {{-- Le titre est maintenant à droite --}}
-                <h5 class="modal-title" id="sendEmailModalLabel">إرسال بريد إلكتروني</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+                <h5 class="modal-title" id="sendEmailModalLabel">Aperçu et Envoi d'E-mail</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق" style="color: white; margin-left: 0; padding-left:0;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form id="sendEmailForm">
-                {{-- Ajout de dir="rtl" pour un affichage de droite à gauche --}}
                 <div class="modal-body text-right" dir="rtl">
                     @csrf
-                    <input type="hidden" name="entreprise_id" id="sendEmailEntrepriseId">
+                    @if(isset($echantillon))
+                        <input type="hidden" name="echantillon_id" value="{{ $echantillon->id }}">
+                        <input type="hidden" name="entreprise_id" value="{{ $echantillon->entreprise->id }}">
+                    @endif
+
+                    <div class="form-group text-center bg-light p-2 rounded mb-3">
+                        <label class="d-block mb-2"><strong>Langue du message</strong></label>
+                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-outline-primary active">
+                                <input type="radio" name="langue_mail" value="ar" autocomplete="off" checked> العربية
+                            </label>
+                            <label class="btn btn-outline-primary">
+                                <input type="radio" name="langue_mail" value="fr" autocomplete="off"> Français
+                            </label>
+                        </div>
+                    </div>
                     
                     <div class="form-group">
-                        <label for="destinataire_email">**المستلم:**</label>
-                        <input type="email" class="form-control" id="destinataire_email" name="destinataire" readonly style="background-color: #e9ecef;">
+                        <label for="destinataire_email"><strong>Destinataire :</strong></label>
+                        <input type="email" class="form-control" id="destinataire_email" name="destinataire" readonly style="background-color: #e9ecef; direction: ltr;">
+                    </div>
+
+                    {{-- NOUVEAU: Champs visibles mais non modifiables --}}
+                    <div class="form-group">
+                        <label for="email_sujet"><strong>Sujet :</strong></label>
+                        <input type="text" class="form-control" id="email_sujet" name="sujet" readonly style="background-color: #e9ecef;">
                     </div>
 
                     <div class="form-group">
-                        <label for="email_sujet">**الموضوع:**</label>
-                        <input type="text" class="form-control" id="email_sujet" name="sujet" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email_corps">**الرسالة:**</label>
-                        <textarea class="form-control" id="email_corps" name="corps" rows="8" required></textarea>
+                        <label for="email_corps"><strong>Message :</strong></label>
+                        <textarea class="form-control" id="email_corps" name="corps" rows="8" readonly style="background-color: #e9ecef;"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    {{-- Les boutons sont inversés pour un ordre logique en RTL --}}
-                    <button type="submit" id="sendEmailSubmitBtn" class="btn btn-primary">إرسال</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="submit" id="sendEmailSubmitBtn" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Envoyer</button>
                 </div>
             </form>
         </div>
@@ -592,37 +955,40 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
                 if (response.ok && data.success) {
     const statutDisplayElement = document.getElementById('statutDisplay');
     if (statutDisplayElement) {
-        let statutText = statut; 
-        let badgeClass = 'badge-light'; // Un défaut sûr
+    let statutText = statut;
+    let badgeClass = 'badge-light'; // Un défaut sûr
 
-        if (statut === 'répondu' || statut === 'termine') { 
-            statutText = (statut === 'termine' ? 'مكتمل' : 'تم الرد');
-            badgeClass = 'badge-success';
-        } else if (statut === 'réponse partielle') {
-            statutText = 'رد جزئي';
-            badgeClass = 'badge-warning';
-        } else if (statut === 'un rendez-vous') {
-            statutText = 'موعد';
-            badgeClass = 'badge-info';
-        } else if (statut === 'à appeler') { // <-- NOUVELLE CONDITION
-            statutText = 'إعادة إتصال';
-            badgeClass = 'badge-primary';
-        } else if (statut === 'pas de réponse') {
-            statutText = 'لا رد';
-            badgeClass = 'badge-secondary';
-        } else if (statut === 'refus' || statut === 'refus final') {
-            statutText = 'رفض';
-            badgeClass = 'badge-danger';
-        } else if (statut === 'introuvable') {
-            statutText = 'غير موجود';
-            badgeClass = 'badge-dark';
-        } else { // 'en attente' ou autre
-            statutText = 'في الانتظار';
-            badgeClass = 'badge-primary';
-        }
-        
-        statutDisplayElement.textContent = statutText;
-        statutDisplayElement.className = 'badge ' + badgeClass;
+    if (statut === 'Complet' || statut === 'termine') {
+        statutText = 'مكتمل';
+        badgeClass = 'badge-success';
+    } else if (statut === 'répondu') {
+        statutText = 'تم الرد';
+        badgeClass = 'badge-success';
+    } else if (statut === 'réponse partielle') {
+        statutText = 'رد جزئي';
+        badgeClass = 'badge-warning';
+    } else if (statut === 'un rendez-vous') {
+        statutText = 'موعد';
+        badgeClass = 'badge-info';
+    } else if (statut === 'à appeler') {
+        statutText = 'إعادة إتصال';
+        badgeClass = 'badge-primary';
+    } else if (statut === 'pas de réponse') {
+        statutText = 'لا رد';
+        badgeClass = 'badge-secondary';
+    } else if (statut === 'refus' || statut === 'refus final') {
+        statutText = (statut === 'refus final') ? 'رفض كلي' : 'رفض';
+        badgeClass = 'badge-danger';
+    } else if (statut === 'introuvable') {
+        statutText = 'غير موجود';
+        badgeClass = 'badge-dark';
+    } else { // 'en attente' ou autre
+        statutText = 'في الانتظار';
+        badgeClass = 'badge-primary';
+    }
+
+    statutDisplayElement.textContent = statutText;
+    statutDisplayElement.className = 'badge ' + badgeClass;
         // On ré-attache le style et l'attribut pour la modale
         statutDisplayElement.style.cursor = 'pointer'; 
     }
@@ -644,6 +1010,101 @@ Pourriez-vous me fournir : • Nom et prénom • Fonction • Numéro de télé
         
         console.log('🚀 PAGE INDEX CHARGÉE - JS MODIFIÉ EN COURS 🚀');
         const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+        
+       // =============================================================
+        // == DÉBUT : NOUVELLE LOGIQUE POUR L'ENVOI D'EMAIL BILINGUE ==
+        // =============================================================
+        
+        var emailData = {}; // Variable pour stocker les données du mail cliqué
+
+        // Fonction pour mettre à jour les champs de prévisualisation 'sujet' et 'corps'
+        function updatePreviewFields(lang) {
+            if (!emailData) return; // Sécurité
+
+            if (lang === 'fr') {
+                $('#email_sujet').val(emailData.sujetFr || '').css('direction', 'ltr');
+                $('#email_corps').val(emailData.corpsFr || '').css('direction', 'ltr');
+            } else { // 'ar' par défaut
+                $('#email_sujet').val(emailData.sujetAr || '').css('direction', 'rtl');
+                $('#email_corps').val(emailData.corpsAr || '').css('direction', 'rtl');
+            }
+        }
+
+        // Étape 1 : Quand un lien email est cliqué, on stocke les données et on prépare la modale
+        $(document).on('click', '.clickable-email', function(e) {
+            e.preventDefault();
+            var link = $(this);
+
+            emailData = {
+                email:     link.data('email'),
+                sujetFr:   link.data('sujet-fr'),
+                corpsFr:   link.data('corps-fr'),
+                sujetAr:   link.data('sujet-ar'),
+                corpsAr:   link.data('corps-ar')
+            };
+
+            $('#destinataire_email').val(emailData.email);
+            
+            // Réinitialiser la langue sur "Arabe"
+            $('input[name="langue_mail"][value="ar"]').prop('checked', true).parent().addClass('active').siblings().removeClass('active');
+            
+            // Mettre à jour les champs de prévisualisation avec le contenu arabe par défaut
+            updatePreviewFields('ar');
+            
+            $('#sendEmailModal').modal('show');
+        });
+
+        // Étape 2: Mettre à jour les champs si l'utilisateur change de langue
+        $('input[name="langue_mail"]').on('change', function() {
+            updatePreviewFields($(this).val());
+        });
+
+        // Étape 3 : Quand le formulaire est soumis, il envoie directement tous les champs
+        $('#sendEmailForm').on('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = $('#sendEmailSubmitBtn');
+            
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> ...جاري الإرسال');
+            
+            // Le FormData va maintenant inclure automatiquement les champs sujet et corps car ils ont un attribut "name"
+            let formData = new FormData(this);
+            
+            try {
+                const response = await fetch('{{ route("emails.send") }}', { 
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showFeedback(result.message || 'تم إرسال البريد الإلكتروني بنجاح!', 'success');
+                    $('#sendEmailModal').modal('hide');
+                } else {
+                    let errorMsg = result.message || 'حدث خطأ أثناء الإرسال.';
+                    if(result.errors) {
+                       errorMsg = Object.values(result.errors)[0][0];
+                    }
+                    showFeedback(errorMsg, 'danger');
+                }
+            } catch (error) {
+                console.error("Erreur AJAX d'envoi d'email:", error);
+                showFeedback('خطأ في الشبكة. لا يمكن إرسال البريد الإلكتروني.', 'danger');
+            } finally {
+                submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> إرسال');
+            }
+        });
+        
+        // =============================================================
+        // == FIN : NOUVELLE LOGIQUE POUR L'ENVOI D'EMAIL BILINGUE   ==
+        // =============================================================
+        
+
+
 
         let echantillon_entreprise_id_js = {!! $echantillonEntrepriseIdJson ?? 'null' !!};
         let echantillonDataForModal = null; 
@@ -1252,10 +1713,61 @@ if (btnSubmitNouvelleSuivi) {
 
         const btnVoirScript = document.getElementById('btnVoirScript');
         if (btnVoirScript) { btnVoirScript.addEventListener('click', function (e) { e.preventDefault(); if (typeof $ !== 'undefined' && $('#appelScriptModal').modal) $('#appelScriptModal').modal('show'); }); }
-        
-        const btnVoirQuestionnaire = document.getElementById('btnVoirQuestionnaire');
-        if (btnVoirQuestionnaire) { btnVoirQuestionnaire.addEventListener('click', function(e) { e.preventDefault(); const questionnaireUrl = '{{-- URL de votre questionnaire --}}'; if(questionnaireUrl) window.open(questionnaireUrl, '_blank'); else showFeedback('Lien du questionnaire non configuré.', 'warning'); }); }
+         // ===================================================================
+        // == DÉBUT : BLOC À AJOUTER POUR LE BOUTON QUESTIONNAIRE ==
+        // ===================================================================
 
+        // On cible le bouton du questionnaire par son ID
+        const btnVoirQuestionnaire = document.getElementById('btnVoirQuestionnaire');
+
+        // CETTE VÉRIFICATION EST CRUCIALE !
+        // Elle s'assure que le code ne s'exécute que si le bouton existe dans la page
+        // (c'est-à-dire quand un échantillon est chargé).
+        // Cela empêche toute erreur JavaScript de bloquer les autres scripts.
+        if (btnVoirQuestionnaire) {
+            
+            btnVoirQuestionnaire.addEventListener('click', function(e) {
+                e.preventDefault(); // On empêche le comportement par défaut
+
+                // On récupère les informations stockées dans les attributs data-* du bouton
+                const idEchantillon = this.dataset.idEchantillon;
+                const codeNational = this.dataset.codeNational;
+                const idUtilisateur = this.dataset.idUtilisateur;
+                const raisonSociale = this.dataset.raisonSociale;
+
+                // On vérifie que les données essentielles sont bien là
+                if (!idEchantillon || !idUtilisateur) {
+                    showFeedback('Données manquantes pour ouvrir le questionnaire. Veuillez actualiser.', 'danger');
+                    console.error('Données manquantes pour le questionnaire:', this.dataset);
+                    return; // On arrête l'exécution si les données manquent
+                }
+
+                // On construit l'URL de destination
+                const baseUrl = 'http://172.31.5.128/saisie_enquete/emploi_entreprise/mon-api/api.php';
+                
+                // On utilise URLSearchParams pour construire les paramètres de manière sécurisée
+                // (cela gère automatiquement les espaces ou caractères spéciaux dans la raison sociale, par exemple)
+                const params = new URLSearchParams({
+                    id_echantillon: idEchantillon,
+                    code_nationale: codeNational || '', // On met une chaîne vide si c'est null
+                    id: idUtilisateur,
+                    rs: raisonSociale || '' // On met une chaîne vide si c'est null
+                });
+
+                // On assemble l'URL finale
+                const finalUrl = `${baseUrl}?${params.toString()}`;
+
+                console.log("URL du questionnaire générée :", finalUrl); // Pour le débogage
+
+                // On ouvre le lien dans un nouvel onglet
+                window.open(finalUrl, '_blank', 'noopener,noreferrer');
+            });
+        }
+        // ===================================================================
+        // == FIN : BLOC POUR LE BOUTON QUESTIONNAIRE ==
+        // ===================================================================
+
+        
         const btnRelance = document.getElementById('btnRelance');
         if (btnRelance) {
     btnRelance.addEventListener('click', async function (e) {
@@ -1375,82 +1887,12 @@ if (btnSubmitNouvelleSuivi) {
         @endif
         
 
+
+
+
+        
+
     }); // Fin de DOMContentLoaded
-    // ===================================================================
-    // == DÉBUT : LOGIQUE CORRIGÉE ET FINALE POUR LA MODALE EMAIL ==
-    // ===================================================================
-
-    // Utilise jQuery pour écouter les clics sur les éléments avec la classe '.clickable-email'.
-    $(document).on('click', '.clickable-email', function(e) {
-        e.preventDefault(); // Empêche le lien de sauter en haut de la page.
-
-        // 1. Récupérer toutes les informations depuis les attributs data-* du lien cliqué.
-        const emailSelectionne = $(this).data('email');
-        const sujetPrecharge = $(this).data('sujet');
-        const corpsPrecharge = $(this).data('corps');
-        const pieceJointe = $(this).data('piecejointe');
-
-        // 2. Cibler la modale et ses champs de formulaire.
-        const modal = $('#sendEmailModal');
-        const champDestinataire = modal.find('#destinataire_email');
-        const champSujet = modal.find('#email_sujet');
-        const champCorps = modal.find('#email_corps');
-        const attachmentInfo = modal.find('#attachment-info');
-        
-        // 3. Remplir les champs avec les données récupérées.
-        champDestinataire.val(emailSelectionne);
-        champSujet.val(sujetPrecharge);
-        champCorps.val(corpsPrecharge);
-
-        // Mettre à jour l'ID de l'entreprise dans le formulaire
-        @if(isset($echantillon) && $echantillon->entreprise)
-            modal.find('#sendEmailEntrepriseId').val('{{ $echantillon->entreprise->id }}');
-        @endif
-
-        // Afficher les informations sur la pièce jointe
-        if (pieceJointe) {
-            attachmentInfo.html(`<i class="fas fa-paperclip"></i> ${pieceJointe}`);
-        } else {
-            attachmentInfo.html('<i>لا توجد مرفقات لهذه الحملة.</i>');
-        }
-
-        // 4. Ouvrir la modale (Bootstrap 4 via jQuery).
-        modal.modal('show'); 
-    });
-
-    // 5. Gérer la soumission du formulaire
-    $('#sendEmailForm').on('submit', async function(e) {
-        e.preventDefault();
-        const submitBtn = $('#sendEmailSubmitBtn');
-        const csrfToken = $('meta[name="csrf-token"]').attr('content');
-        
-        submitBtn.prop('disabled', true).html('إرسال...');
-
-        try {
-            const response = await fetch('{{ route("emails.send") }}', { // Assurez-vous que cette route existe
-                method: 'POST',
-                body: new FormData(this),
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                showFeedback(result.message || 'تم إرسال البريد الإلكتروني بنجاح!', 'success');
-                $('#sendEmailModal').modal('hide');
-            } else {
-                showFeedback(result.message || 'حدث خطأ أثناء الإرسال.', 'danger');
-            }
-        } catch (error) {
-            showFeedback('خطأ في الشبكة. لا يمكن إرسال البريد الإلكتروني.', 'danger');
-        } finally {
-            submitBtn.prop('disabled', false).html('إرسال');
-        }
-    });
-
-    // ===================================================================
-    // == FIN : LOGIQUE MODALE EMAIL ==
-    // ===================================================================
-
+    
 </script>
 @endsection

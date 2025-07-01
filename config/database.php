@@ -109,7 +109,6 @@ return [
      'prefix' => '',
     'encrypt' => env('DB_ENCRYPT', true),
             'trust_server_certificate' => true, // Cette ligne
-            'datetime_format' => 'Y-m-d H:i:s.v',
 ],
    
 

@@ -2,76 +2,84 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Mail\GenericEmail;
 use App\Models\EchantillonEnquete;
-use App\Models\Entreprise; // IMPORTANT : Importer le modèle Entreprise
+use App\Models\Entreprise;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 class MailController extends Controller
 {
     /**
-     * Envoie un email depuis la modale avec toutes les pièces jointes d'un dossier.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * Envoie un email en utilisant les données du formulaire et en choisissant le template selon la langue.
      */
-    public function sendEmailFromModal(Request $request)
+    public function sendBilingualEmail(Request $request) // MODIFICATION : Le nom de la méthode a été changé.
     {
-        $validated = $request->validate([
-            'entreprise_id' => 'required|exists:entreprises,id',
+        $validator = Validator::make($request->all(), [
             'destinataire' => 'required|email',
-            'sujet' => 'required|string|max:255',
-            'corps' => 'required|string',
+            'langue_mail' => 'required|in:ar,fr',
+            'echantillon_id' => 'required|exists:echantillons_enquetes,id',
         ]);
 
-        // On récupère l'objet Entreprise pour le passer à la vue de l'email
-        $entreprise = Entreprise::find($validated['entreprise_id']);
-        
-        $filesToAttach = [];
-        Log::info('Début du processus d\'envoi d\'e-mail pour ' . $validated['destinataire']);
-
-        $echantillon = EchantillonEnquete::where('entreprise_id', $validated['entreprise_id'])
-                                          ->with('enquete')
-                                          ->first();
-
-        if ($echantillon && $echantillon->enquete && $echantillon->enquete->piece_jointe_path) {
-            $nomDossier = $echantillon->enquete->piece_jointe_path;
-            $dossierRelatif = 'pieces_jointes/' . $nomDossier;
-            $directoryPath = public_path($dossierRelatif);
-
-            if (File::isDirectory($directoryPath)) {
-                $allFiles = File::files($directoryPath);
-                foreach ($allFiles as $file) {
-                    $filesToAttach[] = $dossierRelatif . '/' . $file->getFilename();
-                }
-            } else {
-                Log::error('ERREUR: Le dossier de pièces jointes n\'a pas été trouvé à l\'emplacement : ' . $directoryPath);
-            }
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Données invalides.', 'errors' => $validator->errors()], 422);
         }
 
         try {
-            // On passe toutes les données nécessaires, y compris l'objet $entreprise
-            Mail::to($validated['destinataire'])
-                ->send(new GenericEmail(
-                    $validated['sujet'],
-                    $validated['corps'],
-                    $filesToAttach,
-                    $entreprise // On ajoute l'entreprise ici
-                ));
+            $langue = $request->langue_mail; // Récupère 'ar' ou 'fr'
 
-            Log::info('Envoi de l\'e-mail réussi à ' . $validated['destinataire']);
+            $echantillon = EchantillonEnquete::with(['entreprise', 'enquete'])->find($request->echantillon_id);
+            if (!$echantillon || !$echantillon->enquete) {
+                return response()->json(['success' => false, 'message' => 'Échantillon ou enquête associée non trouvé.'], 404);
+            }
+            
+            $entreprise = $echantillon->entreprise;
+            $enquete = $echantillon->enquete;
+
+            // Préparation des données en fonction de la langue
+            $mailData = [];
+            if ($langue === 'fr') {
+                $mailData['sujet'] = $enquete->titre_mail_fr;
+                $mailData['corps'] = $enquete->corps_mail_fr;
+            } else { // 'ar' par défaut
+                $mailData['sujet'] = $enquete->titre_mail_ar;
+                $mailData['corps'] = $enquete->corps_mail_ar;
+            }
+            
+            // Logique pour les pièces jointes
+            $filesToAttach = [];
+            if ($enquete->piece_jointe_path) {
+                $nomDossier = $enquete->piece_jointe_path;
+                $dossierRelatif = 'pieces_jointes/' . $nomDossier;
+                $directoryPath = public_path($dossierRelatif);
+
+                if (File::isDirectory($directoryPath)) {
+                    foreach (File::files($directoryPath) as $file) {
+                        $filesToAttach[] = $dossierRelatif . '/' . $file->getFilename();
+                    }
+                } else {
+                    Log::warning('Dossier de pièces jointes non trouvé : ' . $directoryPath);
+                }
+            }
+            $mailData['files_to_attach'] = $filesToAttach;
+
+            // Appel du Mailable en passant la langue sélectionnée
+            Mail::to($request->destinataire)
+                ->send(new GenericEmail($mailData, $langue, $entreprise));
+
+            Log::info('Envoi de l\'e-mail réussi à ' . $request->destinataire);
             return response()->json(['success' => true, 'message' => 'E-mail envoyé avec succès !']);
 
         } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'envoi de l\'e-mail : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
-            report($e); 
-            
+            Log::error('Erreur lors de l\'envoi de l\'e-mail : ' . $e->getMessage());
             return response()->json([
                 'success' => false, 
-                'message' => 'Erreur Serveur: Impossible d\'envoyer l\'e-mail. Veuillez contacter l\'administrateur.'
+                'message' => 'Erreur Serveur: Impossible d\'envoyer l\'e-mail.'
             ], 500);
         }
     }

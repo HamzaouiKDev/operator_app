@@ -71,7 +71,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/echantillons/import', [EchantillonImportController::class, 'create'])->name('echantillons.import.form');
         Route::post('/echantillons/import', [EchantillonImportController::class, 'store'])->name('echantillons.import.store');
         Route::resource('enquetes', EnqueteController::class);
-
+        Route::post('/contacts/import', [EntrepriseImportController::class, 'storeContacts'])->name('contacts.import.store');
     });
 
 
@@ -140,8 +140,8 @@ Route::middleware(['auth'])->group(function () {
 /////////////////////////// Route pour l'envoi de mail
 
 // Cette route gère l'action d'envoyer l'e-mail
-Route::post('/emails/send', [MailController::class, 'sendEmailFromModal'])->name('emails.send');
-
+// ROUTE CORRECTE
+Route::post('/emails/send', [MailController::class, 'sendBilingualEmail'])->name('emails.send');
 
 
 /*

@@ -19,16 +19,19 @@ class GenericEmail extends Mailable
     public string $corps;
     public ?Entreprise $entreprise;
     public array $filesToAttach;
+    public string $langue; // Stocke la langue ('ar' ou 'fr')
 
     /**
      * Create a new message instance.
+     * Le constructeur accepte maintenant un tableau de données et la langue.
      */
-    public function __construct(string $sujet, string $corps, array $filesToAttach = [], ?Entreprise $entreprise = null)
+    public function __construct(array $mailData, string $langue, ?Entreprise $entreprise = null)
     {
-        $this->sujet = $sujet;
-        $this->corps = $corps;
+        $this->sujet = $mailData['sujet'];
+        $this->corps = $mailData['corps'];
+        $this->filesToAttach = $mailData['files_to_attach'] ?? [];
         $this->entreprise = $entreprise;
-        $this->filesToAttach = $filesToAttach;
+        $this->langue = $langue; // On sauvegarde la langue ('ar' ou 'fr')
     }
 
     /**
@@ -43,11 +46,17 @@ class GenericEmail extends Mailable
 
     /**
      * Get the message content definition.
+     * C'est ici que la magie opère.
      */
     public function content(): Content
     {
+        // CORRECTION : Le nom de la vue est construit dynamiquement.
+        // Si $this->langue est 'ar', le nom de la vue sera 'emails.mail_template_ar'.
+        // Si $this->langue est 'fr', le nom de la vue sera 'emails.mail_template_fr'.
+        $viewName = 'emails.mail_template_' . $this->langue;
+
         return new Content(
-            view: 'emails.generic_template',
+            view: $viewName,
         );
     }
 

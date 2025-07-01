@@ -50,13 +50,32 @@
 <hr>
 <h5 class="mb-3">البريد الإلكتروني للتقديم</h5>
 
-<div class="form-group">
-    <label for="titre_mail">موضوع البريد الإلكتروني</label>
-    <input type="text" class="form-control" id="titre_mail" name="titre_mail" value="{{ old('titre_mail', $enquete->titre_mail) }}">
-</div>
-<div class="form-group">
-    <label for="corps_mail">محتوى البريد الإلكتروني</label>
-    <textarea name="corps_mail" id="corps_mail" class="form-control" rows="5">{{ old('corps_mail', $enquete->corps_mail) }}</textarea>
+<div class="row">
+    {{-- MODÈLE FRANÇAIS --}}
+    <div class="col-md-6">
+        <h6>Modèle en Français</h6>
+        <div class="form-group">
+            <label for="titre_mail_fr">Sujet de l'e-mail (FR)</label>
+            <input type="text" class="form-control" id="titre_mail_fr" name="titre_mail_fr" value="{{ old('titre_mail_fr', $enquete->titre_mail_fr) }}">
+        </div>
+        <div class="form-group">
+            <label for="corps_mail_fr">Contenu de l'e-mail (FR)</label>
+            <textarea name="corps_mail_fr" id="corps_mail_fr" class="form-control" rows="5">{{ old('corps_mail_fr', $enquete->corps_mail_fr) }}</textarea>
+        </div>
+    </div>
+
+    {{-- MODÈLE ARABE --}}
+    <div class="col-md-6 text-right" dir="rtl">
+        <h6>النموذج بالعربية</h6>
+        <div class="form-group">
+            <label for="titre_mail_ar">موضوع البريد الإلكتروني (AR)</label>
+            <input type="text" class="form-control" id="titre_mail_ar" name="titre_mail_ar" value="{{ old('titre_mail_ar', $enquete->titre_mail_ar) }}">
+        </div>
+        <div class="form-group">
+            <label for="corps_mail_ar">محتوى البريد الإلكتروني (AR)</label>
+            <textarea name="corps_mail_ar" id="corps_mail_ar" class="form-control" rows="5">{{ old('corps_mail_ar', $enquete->corps_mail_ar) }}</textarea>
+        </div>
+    </div>
 </div>
 <hr>
 

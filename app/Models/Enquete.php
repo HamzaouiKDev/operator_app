@@ -15,16 +15,17 @@ class Enquete extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'titre',
-        'description',
-        'statut',
-        'titre_mail',
-        'corps_mail',
-        'piece_jointe_path',
-        'date_debut',
-        'date_fin',
-    ];
-
+    'titre',
+    'description',
+    'statut',
+    'titre_mail_ar',       // Nouveau
+    'corps_mail_ar',       // Nouveau
+    'titre_mail_fr',       // Nouveau
+    'corps_mail_fr',       // Nouveau
+    'piece_jointe_path',
+    'date_debut',
+    'date_fin',
+];
     /**
      * The attributes that should be cast.
      *
