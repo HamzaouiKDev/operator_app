@@ -688,4 +688,49 @@ class EchantillonController extends Controller
         // Utiliser la méthode existante pour préparer et afficher la vue
         return $this->afficherAvecStatistiques($echantillon, $user->id);
     }
+    /**
+     * Affiche la liste des échantillons "en attente" pour l'utilisateur connecté.
+     * Cette méthode est similaire à la page de liste des suivis.
+     */
+    public function listeEnAttente(Request $request)
+    {
+        $user = Auth::user();
+        $searchTerm = $request->input('search_term');
+
+        // Requête de base pour les échantillons en attente assignés à l'utilisateur
+        $echantillonsQuery = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                             ->where('statut', 'en attente') // Assurez-vous que le nom de la colonne est correct
+                                             ->with('entreprise', 'enquete'); // On charge les relations pour l'affichage
+
+        // Si un terme de recherche est fourni (recherche par nom d'entreprise ou intitulé d'enquête)
+        if ($searchTerm) {
+            $echantillonsQuery->where(function ($query) use ($searchTerm) {
+                $query->whereHas('entreprise', function ($q_entreprise) use ($searchTerm) {
+                    $q_entreprise->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
+                })->orWhereHas('enquete', function ($q_enquete) use ($searchTerm) {
+                    $q_enquete->where('intitule', 'like', '%' . $searchTerm . '%');
+                });
+            });
+        }
+
+        // On ordonne par date de modification la plus récente et on pagine
+        $echantillons = $echantillonsQuery->orderBy('updated_at', 'desc')->paginate(15);
+
+        // On calcule les mêmes statistiques que sur les autres pages pour la cohérence
+        $nombreEntreprisesRepondues = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                                       ->whereIn('statut', ['termine', 'répondu'])
+                                                       ->distinct('entreprise_id')
+                                                       ->count();
+
+        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                                          ->distinct('entreprise_id')
+                                                          ->count();
+
+        // On retourne la nouvelle vue avec les données nécessaires
+        return view('echantillons.en_attente', compact(
+            'echantillons',
+            'nombreEntreprisesRepondues',
+            'nombreEntreprisesAttribuees'
+        ));
+    }
 }

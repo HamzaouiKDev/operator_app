@@ -842,6 +842,7 @@ Très bien, je vous remercie pour votre temps. N’hésitez pas à nous recontac
             {{-- ======================================================== --}}
             {{-- == FIN : MODALE DU SCRIPT D'APPEL (MIS A JOUR) == --}}
             {{-- ======================================================== --}}
+            
         @endif {{-- ✅ Fin du @if qui englobe les modales conditionnelles --}}
         
 

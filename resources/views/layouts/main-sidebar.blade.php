@@ -99,6 +99,12 @@
                         <i class="side-menu__icon fas fa-history"></i><span class="side-menu__label">قائمة المتابعات</span>
                     </a>
                 </li>
+                <li class="slide">
+                    <a class="side-menu__item" href="{{ route('echantillons.en_attente') }}">
+                        <i class="side-menu__icon typcn typcn-time"></i>
+                        <span class="side-menu__label">قائمة العينات في الانتظار</span>
+                    </a>
+                </li>
                 
                 <li class="slide">
                     <a class="side-menu__item" href="{{ route('statistiques.index') }}">

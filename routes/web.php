@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
 
         // --- Gestion des Échantillons et des Appels ---
         Route::prefix('echantillons')->name('echantillons.')->group(function () {
+            Route::get('/en-attente', [EchantillonController::class, 'listeEnAttente'])->name('en_attente');
             Route::get('/', [EchantillonController::class, 'index'])->name('index');
             Route::get('/{echantillon}', [EchantillonController::class, 'show'])->name('show');
             Route::post('/next', [EchantillonController::class, 'next'])->name('next');
@@ -96,6 +97,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/appel/encours', [EchantillonController::class, 'appelEnCours'])->name('appelEnCours');
             Route::post('/appel/demarrer', [EchantillonController::class, 'demarrerAppel'])->name('demarrerAppel');
             Route::post('/appel/terminer', [EchantillonController::class, 'terminerAppel'])->name('terminerAppel');
+          
         });
 
         // --- Gestion des Rendez-vous ---
