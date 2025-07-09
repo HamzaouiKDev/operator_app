@@ -4,11 +4,17 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request; // <-- Make sure this is imported
+use Illuminate\Support\Facades\Auth; // <-- Make sure this is imported
 
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
+
+    /**
+     * This is a fallback and will be overridden by our custom logic.
+     */
+    protected $redirectTo = '/home';
 
     public function __construct()
     {
@@ -16,29 +22,29 @@ class LoginController extends Controller
     }
 
     /**
-     * Définit la destination de redirection après une connexion réussie,
-     * en fonction du rôle de l'utilisateur.
+     * This is the correct method for handling redirection after a user is logged in.
+     * It runs after successful authentication and directs the user based on their role.
      *
-     * @return string
+     * @param  \Illuminate\Http\Request  $request
+     * @param  mixed  $user
+     * @return \Illuminate\Http\RedirectResponse
      */
-    protected function redirectTo()
+    protected function authenticated(Request $request, $user)
     {
-        $user = Auth::user();
-
-        // On vérifie que l'utilisateur existe avant de tester ses rôles
-        if ($user) {
-            // Si l'utilisateur a le rôle 'Admin', on le redirige vers le dashboard admin
-            if ($user->hasRole('Admin')) {
-                return route('admin.dashboard');
-            }
-
-            // Si l'utilisateur a le rôle 'Téléopérateur', on le redirige vers sa page d'accueil
-            if ($user->hasRole('Téléopérateur')) {
-                return route('home');
-            }
+        // Check roles and return a full redirect response
+        if ($user->hasRole('Admin')) {
+            return redirect()->route('admin.dashboard');
         }
 
-        // Redirection par défaut si l'utilisateur n'a pas de rôle spécifique ou n'existe pas
-        return '/';
+        if ($user->hasRole('Superviseur')) {
+            return redirect()->route('supervisor.dashboard');
+        }
+
+        if ($user->hasRole('Téléopérateur')) {
+            return redirect()->route('home');
+        }
+
+        // Default redirect if no specific role matches
+        return redirect($this->redirectTo);
     }
 }

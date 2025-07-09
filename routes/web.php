@@ -73,7 +73,18 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('enquetes', EnqueteController::class);
         Route::post('/contacts/import', [EntrepriseImportController::class, 'storeContacts'])->name('contacts.import.store');
     });
+    //======================================================================
+    // == GROUPE SUPERVISEUR ==  ✅ NOUVEAU BLOC À AJOUTER
+    // Seuls les utilisateurs avec le rôle 'Superviseur' (et 'Admin' pour la visibilité) peuvent y accéder.
+    //======================================================================
+    Route::middleware(['role:Superviseur|Admin'])->prefix('supervisor')->name('supervisor.')->group(function () {
 
+        // Affiche le tableau de bord avec le sélecteur de téléopérateur
+        // et les statistiques si un opérateur est choisi.
+        Route::get('/dashboard', [App\Http\Controllers\SupervisorController::class, 'index'])
+             ->name('dashboard');
+
+    });
 
     //======================================================================
     // == GROUPE TÉLÉOPÉRATEUR ==
@@ -92,13 +103,15 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/next', [EchantillonController::class, 'next'])->name('next');
             Route::post('/{id}/statut', [EchantillonController::class, 'updateStatut'])->name('updateStatut');
             Route::post('/{echantillon}/refus', [EchantillonController::class, 'markAsRefused'])->name('refus');
-            
+            Route::post('/{id}/marquer-impossible', [EchantillonController::class, 'markAsImpossible'])->name('markImpossible');
+
             // Logique d'appel
             Route::get('/appel/encours', [EchantillonController::class, 'appelEnCours'])->name('appelEnCours');
             Route::post('/appel/demarrer', [EchantillonController::class, 'demarrerAppel'])->name('demarrerAppel');
             Route::post('/appel/terminer', [EchantillonController::class, 'terminerAppel'])->name('terminerAppel');
           
         });
+
 
         // --- Gestion des Rendez-vous ---
         Route::prefix('rendezvous')->name('rendezvous.')->group(function () {

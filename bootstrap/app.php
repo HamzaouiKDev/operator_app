@@ -12,14 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        
-        // 👇👇 AJOUTEZ CETTE SECTION ICI 👇👇
+
+        // ✅ LIGNE CORRIGÉE ICI
+        // On ajoute le middleware pour gérer les sessions expirées directement au groupe 'web'.
+        $middleware->appendToGroup('web', \Illuminate\Session\Middleware\AuthenticateSession::class);
+
+        // Vos middlewares existants
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-             'auth.api' => \Laravel\Sanctum\Http\Middleware\AuthenticateWithApiToken::class,
-            
+            'auth.api' => \Laravel\Sanctum\Http\Middleware\AuthenticateWithApiToken::class,
         ]);
 
     })

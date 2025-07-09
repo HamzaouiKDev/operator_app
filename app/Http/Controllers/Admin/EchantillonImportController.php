@@ -127,7 +127,7 @@ class EchantillonImportController extends Controller
             $dataToInsert[] = [
                 'entreprise_id' => $entrepriseId,
                 'enquete_id'    => $enqueteId,
-                'statut'        => 'pas traite',
+                'statut'        => 'non traite',
                 'created_at'    => $now,
                 'updated_at'    => $now,
             ];

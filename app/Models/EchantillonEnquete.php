@@ -96,4 +96,15 @@ class EchantillonEnquete extends Model
         // latest() trie les résultats par `created_at` (par défaut) en ordre décroissant.
         return $this->hasMany(EchantillonStatutHistory::class, 'echantillon_enquete_id')->latest();
     }
+    public function suivis()
+    {
+        // Assurez-vous que 'echantillon_enquete_id' est bien la clé étrangère dans votre table 'suivis'
+        return $this->hasMany(Suivi::class, 'echantillon_enquete_id');
+    }
+
+
+    public function appels()
+{
+    return $this->hasMany(Appel::class, 'echantillon_enquete_id');
+}
 }

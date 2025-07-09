@@ -19,10 +19,10 @@ class ApiUserSeeder extends Seeder
         $this->command->line('Exécution du ApiUserSeeder (Mode de compatibilité SQL Server)...');
 
         $apiUser = User::firstOrCreate(
-            ['email' => 'api.user@example.com'],
+            ['email' => 'api.user@ins.tn'],
             [
                 'name' => 'API User',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('p@ssw@rd2025'),
                 'email_verified_at' => now(),
             ]
         );

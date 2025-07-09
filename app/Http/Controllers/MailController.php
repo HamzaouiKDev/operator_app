@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Throwable;
 use App\Mail\GenericEmail;
-use App\Models\EchantillonEnquete;
 use App\Models\Entreprise;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
+use App\Models\EmailEntreprise;
+use App\Models\EchantillonEnquete;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Throwable;
 
 class MailController extends Controller
 {
@@ -73,6 +74,17 @@ class MailController extends Controller
                 ->send(new GenericEmail($mailData, $langue, $entreprise));
 
             Log::info('Envoi de l\'e-mail réussi à ' . $request->destinataire);
+             // ✅ 2. DÉBUT DE LA NOUVELLE LOGIQUE : MARQUER L'EMAIL COMME UTILISÉ
+            $emailRecord = EmailEntreprise::where('email', $request->destinataire)
+                ->where('entreprise_id', $entreprise->id)
+                ->first();
+
+            if ($emailRecord) {
+                $emailRecord->last_used_at = now(); // On met à jour la date d'utilisation
+                $emailRecord->save();
+                Log::info("Email record #{$emailRecord->id} marqué comme utilisé.");
+            }
+            // ✅ FIN DE LA NOUVELLE LOGIQUE
             return response()->json(['success' => true, 'message' => 'E-mail envoyé avec succès !']);
 
         } catch (\Exception $e) {

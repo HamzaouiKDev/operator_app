@@ -1,47 +1,119 @@
 @extends('layouts.master')
 
 @section('css')
-    {{-- Vos CSS existants. Font Awesome est utilisé pour les icônes. --}}
+    {{-- Vos CSS existants --}}
     <link href="{{URL::asset('assets/plugins/jqvmap/jqvmap.min.css')}}" rel="stylesheet">
     <link href="{{URL::asset('assets/plugins/iconfonts/plugin.css')}}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    {{-- Ajout de Google Fonts pour une typographie professionnelle --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
     <style>
-        /* Styles pour les cartes KPI */
-        .kpi-card {
-            /* Changé la bordure de gauche à droite pour RTL */
-            border-right: 5px solid #3498db;
-            border-left: 0;
+        body, h1, h2, h3, h4, h5, h6, .main-content-title, p, span, div, .tx-13, .tx-12 {
+            font-family: 'Cairo', sans-serif !important;
+        }
+
+        /* ----- Style Général ----- */
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
             transition: all 0.3s ease-in-out;
+            background-color: #fff;
         }
-        .kpi-card:hover {
+        .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
         }
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 1.25rem 1.5rem;
+        }
+        .card-title {
+            font-weight: 700;
+            color: #1a2130;
+        }
+
+        /* ----- Styles pour les cartes KPI originales ----- */
+        .kpi-card {
+             border-right: 5px solid #3498db; /* Bordure par défaut */
+             border-left: 0;
+             transition: all 0.3s ease-in-out;
+         }
+        .kpi-card:hover {
+             transform: translateY(-5px);
+             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+         }
         .kpi-icon {
-            font-size: 3rem;
-            opacity: 0.3;
+             font-size: 3rem;
+             opacity: 0.3;
+         }
+
+        /* ----- Tableaux Modernes ----- */
+        .table-custom {
+            border-collapse: separate;
+            border-spacing: 0 8px; /* Espace entre les lignes */
         }
-        /* Assurer que le texte dans les tableaux est bien à droite */
-        .table th, .table td {
-            text-align: right !important;
+        .table-custom tr {
+            background-color: #fff;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        .table-custom td, .table-custom th {
+            border-top: 1px solid #f1f1f1;
+            border-bottom: 1px solid #f1f1f1;
+            padding: 1rem 1.25rem;
+            vertical-align: middle;
+        }
+        .table-custom thead th {
+            border: none;
+            font-weight: 600;
+            color: #888da8;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+        .table-custom tbody tr:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transform: scale(1.02);
+            z-index: 10;
+            position: relative;
+        }
+        .table-custom td:first-child {
+            border-right: 1px solid #f1f1f1; /* Adapté pour RTL */
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        .table-custom td:last-child {
+            border-left: 1px solid #f1f1f1; /* Adapté pour RTL */
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        .badge-custom {
+            padding: 0.5em 1em;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.8rem;
         }
     </style>
 @endsection
 
 @section('page-header')
-    {{-- Le header est maintenant en RTL --}}
     <div class="breadcrumb-header justify-content-between" dir="rtl">
         <div class="left-content">
             <div>
                 <h2 class="main-content-title tx-24 mg-b-1 mg-b-lg-1">لوحة تحكم المسؤول</h2>
-                <p class="mg-b-0">نظرة عامة على نشاط مركز الاتصال.</p>
+                <p class="mg-b-0 text-muted">نظرة عامة على نشاط مركز الاتصال.</p>
             </div>
         </div>
-        <div class="main-dashboard-header-right">
+        <div class="main-dashboard-header-right text-right">
             <div>
-                <label class="tx-13">التاريخ الحالي</label>
-                {{-- Pour afficher les mois en arabe, il faudrait configurer la locale de Carbon dans AppServiceProvider --}}
-                <h5>{{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</h5>
+                <label class="tx-13 text-muted">التاريخ الحالي</label>
+                <h5 class="font-weight-bold">{{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</h5>
             </div>
         </div>
     </div>
@@ -49,6 +121,7 @@
 
 @section('content')
     <div class="container-fluid" dir="rtl">
+        {{-- Cartes KPI (Ancien Design Restauré) --}}
         <div class="row row-sm">
             <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
                 <div class="card overflow-hidden sales-card bg-primary-gradient kpi-card">
@@ -85,7 +158,7 @@
                             <div class="mr-auto">
                                 <h6 class="mb-3 tx-12 text-white">العينات المكتملة</h6>
                                 <h4 class="tx-20 font-weight-bold mb-1 text-white">{{ $echantillonsTermines }}</h4>
-                                <p class="mb-0 tx-12 text-white op-7">الحالات: تم الرد، مكتمل، مرفوض</p>
+                                <p class="mb-0 tx-12 text-white op-7">جميع الحالات المعالجة</p>
                             </div>
                             <i class="fas fa-check-circle kpi-icon"></i>
                         </div>
@@ -107,19 +180,19 @@
                 </div>
             </div>
         </div>
-        <div class="row row-sm">
-            <div class="col-md-12 col-lg-6 col-xl-7">
+
+        {{-- Contenu principal : Tableaux et Graphique (Nouveau Design Conservé) --}}
+        <div class="row row-sm mt-4">
+            {{-- Tableau des performances --}}
+            <div class="col-lg-12 col-xl-7 mb-4">
                 <div class="card">
-                    <div class="card-header bg-transparent pd-b-0 pd-t-20 bd-b-0">
-                        <div class="d-flex justify-content-between">
-                            <h4 class="card-title mb-0">أداء المشغلين</h4>
-                            <i class="mdi mdi-dots-horizontal text-gray"></i>
-                        </div>
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">أداء المشغلين</h4>
                         <p class="tx-12 text-muted mb-0">نظرة عامة على النشاط حسب المستخدم.</p>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped mg-b-0 text-md-nowrap">
+                            <table class="table table-custom">
                                 <thead>
                                     <tr>
                                         <th>المعرف</th>
@@ -131,10 +204,10 @@
                                 <tbody>
                                     @forelse($teleoperateurs as $teleoperateur)
                                         <tr>
-                                            <th scope="row">{{ $teleoperateur->id }}</th>
+                                            <td>{{ $teleoperateur->id }}</td>
                                             <td>{{ $teleoperateur->name }}</td>
-                                            <td><span class="badge badge-success">{{ $teleoperateur->echantillons_traites }}</span></td>
-                                            <td><span class="badge badge-info">{{ $teleoperateur->rdv_pris }}</span></td>
+                                            <td><span class="badge bg-success-transparent text-success badge-custom">{{ $teleoperateur->echantillons_traites }}</span></td>
+                                            <td><span class="badge bg-info-transparent text-info badge-custom">{{ $teleoperateur->rdv_pris }}</span></td>
                                         </tr>
                                     @empty
                                         <tr>
@@ -147,22 +220,21 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 col-xl-5">
+
+            {{-- Graphique de distribution --}}
+            <div class="col-lg-12 col-xl-5 mb-4">
                 <div class="card">
-                    <div class="card-header bg-transparent pd-b-0 pd-t-20 bd-b-0">
-                        <div class="d-flex justify-content-between">
-                            <h4 class="card-title mb-0">توزيع الحالات</h4>
-                            <i class="mdi mdi-dots-horizontal text-gray"></i>
-                        </div>
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">توزيع الحالات</h4>
                         <p class="tx-12 text-muted mb-0">حالة جميع العينات.</p>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" style="height: 350px;">
                         <canvas id="statusChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-        </div>
+    </div>
 @endsection
 
 @section('js')
@@ -176,32 +248,36 @@
                     data: {
                         labels: @json($chartLabels),
                         datasets: [{
-                            label: 'عدد العينات', // Traduit en arabe
+                            label: 'عدد العينات',
                             data: @json($chartData),
                             backgroundColor: [
-                                'rgba(40, 167, 69, 0.8)',
-                                'rgba(23, 162, 184, 0.8)',
-                                'rgba(220, 53, 69, 0.8)',
-                                'rgba(255, 193, 7, 0.8)',
-                                'rgba(108, 117, 125, 0.8)',
-                                'rgba(52, 58, 64, 0.8)',
-                                'rgba(0, 123, 255, 0.8)'
+                                '#f59e0b', // Orange Ambré (Non traité)
+                                '#e5e7eb', // Gris Très Clair (En attente)
+                                '#10b981', // Vert Émeraude (Complet)
+                                '#a78bfa', // Violet Lavande (Partiel)
+                                '#ef4444', // Rouge Vif (Refus)
+                                '#64748b', // Gris Ardoise (Impossible de contacter)
+                                '#0ea5e9', // Bleu Ciel (Rendez-vous)
+                                '#f97316'  // Orange Vif (À appeler)
                             ],
-                            borderColor: ['rgba(255, 255, 255, 1)'],
-                            borderWidth: 1
+                            borderColor: '#fff',
+                            borderWidth: 3,
+                            hoverOffset: 10
                         }]
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: { // Dans Chart.js v3+, legend est dans plugins
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
                             legend: {
                                 position: 'bottom',
                                 labels: {
-                                    // Optionnel: pour s'assurer que la police est correcte
                                     font: {
-                                        family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-                                    }
+                                        family: "'Cairo', sans-serif",
+                                        size: 14
+                                    },
+                                    padding: 20
                                 }
                             }
                         }

@@ -21,12 +21,13 @@ class RolesAndUsersSeeder extends Seeder
         // Cette ligne utilisera maintenant App\Models\Role, qui a la correction pour le format de date
         $adminRole = Role::firstOrCreate(['name' => 'Admin'], ['guard_name' => 'web']);
         $teleopRole = Role::firstOrCreate(['name' => 'Téléopérateur'], ['guard_name' => 'web']);
+        $supervisorRole = Role::firstOrCreate(['name' => 'Superviseur']);
 
         // 2. Créer l'utilisateur Administrateur (un compte fixe et connu)
         $adminUser = User::firstOrCreate(
-            ['email' => 'admin@ins.com'], // On le cherche par son email
+            ['email' => 'admin@ins.tn'], // On le cherche par son email
             [ // Données à utiliser s'il n'existe pas
-                'name' => 'Administrateur Principal',
+                'name' => 'Administrateur',
                 'password' => bcrypt('password') // Mot de passe par défaut
             ]
         );

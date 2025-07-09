@@ -37,6 +37,7 @@ class EchantillonController extends Controller
                 'entreprise.emails', 
                 'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
             ])
+            ->withCount('appels') //
             ->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->first();
@@ -113,7 +114,9 @@ class EchantillonController extends Controller
                     'entreprise.contacts', 
                     'entreprise.emails', 
                     'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
-                ])->find($echantillonDisponible->id);
+                ])
+                ->withCount('appels')
+                ->find($echantillonDisponible->id);
 
                 if (!$nouvelEchantillon) { // Sécurité
                     Log::error("[attribuerNouvelEchantillon] Erreur critique: Impossible de trouver l'échantillon nouvellement assigné #{$echantillonDisponible->id} après mise à jour.");
@@ -181,6 +184,8 @@ class EchantillonController extends Controller
             'entreprise.emails', 
             'entreprise.gouvernorat' // <-- AJOUTÉ: Charge la relation gouvernorat
         ]); 
+
+        $echantillon->loadCount('appels');
 
         $nomEntreprise = optional($echantillon->entreprise)->nom_entreprise ?? 'N/A';
         Log::info("[afficherAvecStatistiques] Préparation de l'affichage pour Échantillon #{$echantillon->id} (Entreprise: {$nomEntreprise}) pour Utilisateur #{$userId}.");
@@ -567,7 +572,7 @@ class EchantillonController extends Controller
         return response()->json(['success' => true, 'disponibles' => $disponibles]);
     }
 
-   public function markAsRefused(Request $request, EchantillonEnquete $echantillon)
+  public function markAsRefused(Request $request, EchantillonEnquete $echantillon)
 {
     try {
         $request->validate([
@@ -585,58 +590,37 @@ class EchantillonController extends Controller
             return response()->json(['success' => false, 'message' => 'Cet échantillon n\'est pas assigné à cet utilisateur.'], 403);
         }
 
-        // 2. Utiliser une transaction pour s'assurer que toutes les opérations réussissent ou échouent ensemble.
-        $finalStatus = DB::transaction(function () use ($echantillon, $request, $user) {
+        // 2. Utiliser une transaction
+        DB::transaction(function () use ($echantillon, $request, $user) {
             
-            // Étape A: Enregistrer l'action de refus DANS TOUS LES CAS.
+            // Étape A: Enregistrer l'historique de l'action de refus.
             EchantillonStatutHistory::create([
                 'echantillon_enquete_id' => $echantillon->id,
                 'user_id'                => $user->id,
-                'ancien_statut'          => $echantillon->statut, // Statut actuel avant la modification
-                'nouveau_statut'         => 'refus', // L'action de l'utilisateur est toujours 'refus'
+                'ancien_statut'          => $echantillon->statut,
+                'nouveau_statut'         => 'refus', // Le nouveau statut est toujours 'refus'
                 'commentaire'            => $request->input('commentaire'),
             ]);
 
-            // Étape B: Compter le nombre total de refus enregistrés pour cet échantillon.
-            $refusCount = EchantillonStatutHistory::where('echantillon_enquete_id', $echantillon->id)
-                ->where('nouveau_statut', 'refus')
-                ->count();
-            
-            // Étape C: Mettre à jour l'échantillon principal.
+            // Étape B: Mettre à jour directement l'échantillon principal.
             $echantillon->date_traitement = now();
             $echantillon->commentaire = $request->input('commentaire');
+            $echantillon->statut = 'refus'; // On force le statut à 'refus' dans tous les cas.
 
-            // Étape D: Déterminer le nouveau statut en fonction du nombre de refus.
-            if ($refusCount >= 5) {
-                $echantillon->statut = 'refus final';
-            } else {
-                $echantillon->statut = 'refus';
-            }
-
-            // Étape E: Sauvegarder. L'Observer sera déclenché ici.
-            // Si l'Observer retourne false, la méthode save() échouera.
+            // Étape C: Sauvegarder. (L'Observer peut toujours bloquer si le statut est déjà final).
             if (!$echantillon->save()) {
-                 // L'observer a bloqué la sauvegarde. On lève une exception pour annuler la transaction.
                  throw new \Exception('Sauvegarde bloquée par l-Observer (statut déjà final).');
             }
-            
-            // Retourner le statut final pour la réponse JSON.
-            return $echantillon->statut;
         });
 
-        // 3. Renvoyer la réponse de succès
-        $message = $finalStatus === 'refus final'
-            ? 'Échantillon marqué comme refusé. Le statut est maintenant "Refus Final" (seuil des 5 refus atteint).'
-            : 'L\'échantillon a été marqué comme refusé avec succès.';
-
+        // 3. Renvoyer la réponse de succès (message simplifié)
         return response()->json([
             'success' => true,
-            'message' => $message,
-            'nouveau_statut' => $finalStatus
+            'message' => 'L\'échantillon a été marqué comme refusé avec succès.',
+            'nouveau_statut' => 'refus'
         ]);
 
     } catch (Throwable $e) {
-        // Gérer les erreurs (validation, échec de la transaction, etc.)
         $isObserverBlock = str_contains($e->getMessage(), 'Observer');
         
         Log::error("Erreur dans markAsRefused: " . $e->getMessage());
@@ -647,7 +631,7 @@ class EchantillonController extends Controller
                 ? 'Impossible de modifier le statut car l\'échantillon est déjà dans un état final.'
                 : 'Une erreur serveur s\'est produite lors de la sauvegarde.',
             'error_details' => $e->getMessage()
-        ], $isObserverBlock ? 409 : 500); // HTTP 409 Conflict si bloqué par l'observer
+        ], $isObserverBlock ? 409 : 500);
     }
 }
 
@@ -732,5 +716,31 @@ class EchantillonController extends Controller
             'nombreEntreprisesRepondues',
             'nombreEntreprisesAttribuees'
         ));
+    }
+    public function markAsImpossible(Request $request, $id)
+    {
+        try {
+            $echantillon = EchantillonEnquete::findOrFail($id);
+
+            // OPTIONNEL : Vous pouvez réactiver cette vérification si l'opérateur
+            // ne doit pouvoir modifier que ses propres échantillons.
+            // if ($echantillon->utilisateur_id != Auth::id()) {
+            //     return response()->json(['success' => false, 'message' => 'Action non autorisée.'], 403);
+            // }
+
+            $echantillon->statut = 'impossible de contacter';
+            $echantillon->date_traitement = now();
+            $echantillon->save();
+
+            Log::info("Échantillon #{$id} marqué 'impossible de contacter' par l'utilisateur #" . Auth::id());
+
+            return response()->json(['success' => true, 'message' => 'Statut mis à jour avec succès.']);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Échantillon non trouvé.'], 404);
+        } catch (\Exception $e) {
+            Log::error("Erreur dans markAsImpossible pour échantillon #{$id}: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Une erreur serveur est survenue.'], 500);
+        }
     }
 }

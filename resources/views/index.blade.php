@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     
     <style>
+        @keyframes blinker {
+            50% {
+                opacity: 0.2; /* On le rend semi-transparent au lieu de complètement invisible pour un effet plus doux */
+            }
+        }
+
+        .blinking-badge {
+            animation: blinker 1.5s linear infinite; /* Fait clignoter le badge toutes les 1.5 secondes */
+            font-weight: bold; /* Rend le texte en gras pour plus d'impact */
+        }
         /* Styles existants */
         #appelActions { transition: all 0.3s ease-in-out; }
         #appelActions .btn { transition: all 0.2s ease; }
@@ -260,54 +270,63 @@
                 <span class="item-value">{{ $echantillon->entreprise->localite_cnss ?? 'غير متوفر' }}</span>
             </div>
 
+           {{-- REMPLACEZ L'ANCIEN BLOC "عدد المكالمات" PAR CELUI-CI --}}
+<div class="list-group-item">
+    <div class="item-label">
+        <i class="item-icon fas fa-phone-volume"></i>
+        <strong>عدد المكالمات</strong>
+    </div>
+    <span class="item-value">
+        @php
+            // On récupère le nombre d'appels. S'il n'existe pas, on met 0.
+            $appelCount = $echantillon->appels_count ?? 0;
+
+            // On prépare les classes CSS pour le badge.
+            $badgeClasses = 'badge ';
+
+            // Si le nombre d'appels est 10 ou plus, on ajoute les classes pour le style.
+            if ($appelCount >= 10) {
+                $badgeClasses .= 'badge-danger blinking-badge'; // Classe pour la couleur rouge et pour le clignotement.
+            } else {
+                $badgeClasses .= 'badge-primary'; // Classe pour la couleur bleue par défaut.
+            }
+        @endphp
+
+        {{-- On affiche le badge avec les classes CSS dynamiques --}}
+        <span class="{{ $badgeClasses }}">{{ $appelCount }}</span>
+    </span>
+</div>
+
             <div class="list-group-item">
                 <div class="item-label">
                     <i class="item-icon fas fa-chart-line"></i>
                     <strong>حالة العينة</strong>
                 </div>
                 <span class="item-value">
-                     @php
-                                                $statut = $echantillon->statut;
-                                                $badgeClass = '';
-                                                $statutText = '';
+                  @php
+    $statut = $echantillon->statut;
+    
+    // On définit les valeurs par défaut
+    $badgeClass = 'badge-light';
+    $statutText = 'في الانتظار';
 
-                                                if ($statut == 'Complet' || $statut == 'termine') { // Gère 'Complet' et 'termine'
-                                                    $badgeClass = 'badge-success'; 
-                                                    $statutText = 'مكتمل';
-                                                } 
-                                                elseif ($statut == 'répondu') { 
-                                                    $badgeClass = 'badge-success'; 
-                                                    $statutText = 'تم الرد'; 
-                                                } 
-                                                elseif ($statut == 'réponse partielle') { 
-                                                    $badgeClass = 'badge-warning'; 
-                                                    $statutText = 'رد جزئي'; 
-                                                } 
-                                                elseif ($statut == 'un rendez-vous') { 
-                                                    $badgeClass = 'badge-info'; 
-                                                    $statutText = 'موعد'; 
-                                                } 
-                                                elseif ($statut == 'à appeler') { 
-                                                    $badgeClass = 'badge-primary'; 
-                                                    $statutText = 'إعادة إتصال'; 
-                                                } 
-                                                elseif ($statut == 'pas de réponse') { 
-                                                    $badgeClass = 'badge-secondary'; 
-                                                    $statutText = 'لا رد'; 
-                                                } 
-                                                elseif ($statut == 'refus' || $statut == 'refus final') { // Gère 'refus' et 'refus final'
-                                                    $badgeClass = 'badge-danger';
-                                                    $statutText = ($statut == 'refus final') ? 'رفض كلي' : 'رفض';
-                                                } 
-                                                elseif ($statut == 'introuvable') { 
-                                                    $badgeClass = 'badge-dark'; 
-                                                    $statutText = 'غير موجود'; 
-                                                } 
-                                                else { // 'en attente' ou autre statut par défaut
-                                                    $badgeClass = 'badge-light'; 
-                                                    $statutText = 'في الانتظار'; 
-                                                }
-                                            @endphp
+    if ($statut == 'Complet' || $statut == 'termine') {
+        $badgeClass = 'badge-success';
+        $statutText = 'مكتمل';
+    }   elseif ($statut == 'un rendez-vous') {
+        $badgeClass = 'badge-info';
+        $statutText = 'موعد';
+    } elseif ($statut == 'à appeler') {
+        $badgeClass = 'badge-primary';
+        $statutText = 'إعادة إتصال';
+    }  elseif ($statut == 'refus' || $statut == 'refus final') {
+        $badgeClass = 'badge-danger';
+        $statutText = ($statut == 'refus final') ? 'رفض كلي' : 'رفض';
+    }  elseif ($statut == 'impossible de contacter') { // Placé au bon endroit
+        $badgeClass = 'badge-dark';
+        $statutText = 'إستحالة الإتصال';
+    }
+@endphp
                     <span class="badge {{ $badgeClass }}">{{ $statutText }}</span>
                 </span>
             </div>
@@ -320,6 +339,8 @@
                                         @csrf
                                         <button id="btnEchantillonSuivant" type="submit" class="btn btn-primary btn-lg mb-2" style="background-color: #f39c12; border-color: #f39c12; width: 100%;"><i class="typcn typcn-arrow-right ml-2"></i> الانتقال إلى العينة التالية</button>
                                     </form>
+                                     <button id="btnImpossibleDeContacter" class="btn btn-dark btn-lg mb-2" style="width: 100%;"><i class="fas fa-phone-slash ml-1"></i> إستحالة الإتصال</button>
+
                                     @if($peutLancerAppel ?? false)
                                         <button id="btnLancerAppel" class="btn btn-success btn-lg mb-2" style="width: 100%;" data-echantillon-id="{{ $echantillon->id }}"><i class="typcn typcn-phone-outgoing ml-1"></i> بدء المكالمة</button>
                                        {{-- ... à l'intérieur de @if($peutLancerAppel ?? false) ... --}}
@@ -339,14 +360,13 @@
 
     {{-- VÉRIFIEZ QUE CE BOUTON EST BIEN DANS LA BOUCLE @if(isset($echantillon) ... ) --}}
 @if(isset($echantillon) && $echantillon->entreprise)
-    <button id="btnVoirQuestionnaire" 
-            class="btn btn-outline-primary btn-block"
-            {{-- Ici nous ajoutons les données dynamiques --}}
-            data-id-echantillon="{{ $echantillon->id }}"
-            data-code-national="{{ $echantillon->entreprise->code_national }}"
-            data-raison-sociale="{{ $echantillon->entreprise->nom_entreprise }}"
-            data-id-utilisateur="{{ Auth::user()->id }}">
-        <i class="typcn typcn-document-add ml-1"></i> الاستبيان
+    <button id="btnVoirQuestionnaire"
+        class="btn btn-outline-primary btn-block"
+        data-id-echantillon="{{ $echantillon->id }}"
+        data-code-national="{{ $echantillon->entreprise->id }}" {{-- ✅ CORRECTION ICI --}}
+        data-raison-sociale="{{ $echantillon->entreprise->nom_entreprise }}"
+        data-id-utilisateur="{{ Auth::user()->id }}">
+    <i class="typcn typcn-document-add ml-1"></i> الاستبيان
     </button>
 @endif
 </div>
@@ -1099,6 +1119,65 @@ Très bien, je vous remercie pour votre temps. N’hésitez pas à nous recontac
                 submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> إرسال');
             }
         });
+
+        // =======================================================================
+        // == LOGIQUE POUR LE BOUTON "IMPOSSIBLE DE CONTACTER" (INCHANGÉE) ==
+        // =======================================================================
+        const btnImpossibleDeContacter = document.getElementById('btnImpossibleDeContacter');
+        if (btnImpossibleDeContacter) {
+            btnImpossibleDeContacter.addEventListener('click', async function(e) {
+                e.preventDefault();
+
+                if (!confirm('هل أنت متأكد أنك تريد تغيير الحالة إلى "غير موجود"؟')) {
+                    return;
+                }
+
+                // La façon de récupérer l'ID est la même, via le bouton d'appel
+                const echantillonId = document.getElementById('btnLancerAppel')?.getAttribute('data-echantillon-id');
+
+                if (!echantillonId || !csrfToken) {
+                    showFeedback('خطأ: معرف العينة أو رمز الأمان مفقود.', 'danger');
+                    return;
+                }
+
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...جاري التغيير';
+
+                try {
+                    const url = `/echantillons/${echantillonId}/marquer-impossible`;
+
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showFeedback(data.message || 'تم تغيير الحالة بنجاح!', 'success');
+                        window.location.reload(); // Recharger pour voir les changements
+                    } else {
+                        showFeedback(data.message || 'فشل تغيير الحالة.', 'danger');
+                    }
+
+                } catch (error) {
+                    console.error('Erreur AJAX (Impossible de contacter):', error);
+                    showFeedback('خطأ في الاتصال بالخادم.', 'danger');
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-phone-slash ml-1"></i> غير موجود';
+                }
+            });
+        }
+        // =======================================================================
+        // == FIN DE LA LOGIQUE DU BOUTON ==
+        // =======================================================================
+
         
         // =============================================================
         // == FIN : NOUVELLE LOGIQUE POUR L'ENVOI D'EMAIL BILINGUE   ==

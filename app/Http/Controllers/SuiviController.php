@@ -15,41 +15,47 @@ class SuiviController extends Controller
     /**
      * Affiche la liste des suivis pour l'utilisateur connecté.
      */
-    public function indexSuivis(Request $request)
+   public function indexSuivis(Request $request)
     {
         $user = Auth::user();
         $searchTerm = $request->input('search_term');
 
-        $suivisQuery = Suivi::where('utilisateur_id', $user->id)
-                            ->with('echantillonEnquete.entreprise');
+        $echantillonsQuery = EchantillonEnquete::where('utilisateur_id', $user->id)
+        ->where('statut', 'LIKE', '%appeler%') // Utilise LIKE pour éviter les problèmes d'encodage
+        ->with(['entreprise', 'suivis' => function ($query) {
+            $query->latest();
+        }]);
 
         if ($searchTerm) {
-            $suivisQuery->where(function ($query) use ($searchTerm) {
-                $query->where('note', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('cause_suivi', 'like', '%' . $searchTerm . '%')
-                      ->orWhereHas('echantillonEnquete.entreprise', function ($q_entreprise) use ($searchTerm) {
-                          $q_entreprise->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
-                      });
+            $echantillonsQuery->where(function ($query) use ($searchTerm) {
+                $query->whereHas('entreprise', function ($q_entreprise) use ($searchTerm) {
+                    $q_entreprise->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
+                })
+                ->orWhereHas('suivis', function ($q_suivi) use ($searchTerm) {
+                    $q_suivi->where('cause_suivi', 'like', '%' . $searchTerm . '%')
+                          ->orWhere('note', 'like', '%' . $searchTerm . '%');
+                });
             });
         }
 
-        $suivis = $suivisQuery->orderBy('created_at', 'desc')
-                            ->paginate(10, ['*'], 'page_suivis')
-                            ->appends($request->except('page_suivis'));
+        // ✅ CORRECTION : La variable est renommée ici pour correspondre à la vue.
+        $suivis = $echantillonsQuery->latest('updated_at')
+            ->paginate(10);
 
-        $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu'])
-                                            ->where('utilisateur_id', $user->id)
-                                            ->count();
+        $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['Complet', 'termine', 'répondu'])
+            ->where('utilisateur_id', $user->id)
+            ->count();
+            
         $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
-                                            ->count();
+            ->count();
 
+        // ✅ CORRECTION : On passe la variable 'suivis' à la vue.
         return view('indexSuivi', compact(
             'suivis',
             'nombreEntreprisesRepondues',
             'nombreEntreprisesAttribuees'
         ));
     }
-
     /**
      * Enregistre un nouveau suivi (rappel) et met à jour le statut de l'échantillon parent à "à appeler".
      * C'est la méthode principale appelée par le formulaire.

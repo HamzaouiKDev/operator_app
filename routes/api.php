@@ -23,6 +23,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/echantillons/disponibles', [EchantillonController::class, 'disponibles'])->name('echantillons.disponibles');
 
-    // Nouvelle route API pour changer le statut de l'échantillon à 'Complet'
+    // Rroute API pour changer le statut de l'échantillon à 'Complet'
     Route::post('/echantillons/{id}/marquer-complet', [EchantillonStatusController::class, 'markAsComplete'])->name('api.echantillons.markAsComplete');
+    // ROUTE API pour marquer comme 'Partiel'
+    Route::post('/echantillons/{echantillon}/marquer-partiel', [EchantillonStatusController::class, 'markAsPartial'])->name('api.echantillons.markAsPartial');
+
+
 });

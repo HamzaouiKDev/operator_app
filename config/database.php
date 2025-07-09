@@ -96,8 +96,7 @@ return [
             'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
-
-       'sqlsrv' => [
+'sqlsrv' => [
     'driver' => 'sqlsrv',
     'url' => env('DB_URL'),
     'host' => env('DB_HOST', 'localhost\SQLEXPRESS'),
@@ -106,9 +105,11 @@ return [
     'username' => env('DB_USERNAME', 'laravel_user'),
     'password' => env('DB_PASSWORD', ''),
     'charset' => env('DB_CHARSET', 'utf8'),
-     'prefix' => '',
+    'prefix' => '',
     'encrypt' => env('DB_ENCRYPT', true),
-            'trust_server_certificate' => true, // Cette ligne
+    'trust_server_certificate' => true,
+    // Une seule fois ici
+    'drop_table_command' => null,
 ],
    
 
