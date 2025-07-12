@@ -14,74 +14,113 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // --- KPIs (Indicateurs Clés de Performance) ---
+        // --- 1. Définition claire et centralisée des statuts ---
+        $statutsComplets = ['Complet', 'termine'];
+        $statutsPartiels = ['Partiel', 'réponse partielle'];
+        $statutsRefus = ['refus'];
+        $statutsImpossible = ['impossible de contacter'];
+        $statutRendezVous = 'un rendez-vous';
+
+        $statutsTermines = array_merge($statutsComplets, $statutsRefus, $statutsImpossible);
+        $statutsTraites = ['Complet', 'termine', 'Partiel', 'réponse partielle', 'refus', 'impossible de contacter', 'un rendez-vous', 'à appeler', 'répondu'];
+        $historyStatusColumnName = 'nouveau_statut';
+
+        // --- 2. KPIs Généraux ---
         $totalTeleoperateurs = User::role('Téléopérateur')->count();
         $totalEchantillons = EchantillonEnquete::count();
         $rendezVousAujourdhui = RendezVous::whereDate('heure_rdv', Carbon::today())->count();
+        $echantillonsTermines = EchantillonEnquete::whereIn('statut', $statutsTermines)->count();
 
-        // --- ✅ NOUVELLE LOGIQUE POUR LE GRAPHIQUE ET LES STATS ---
+        // Informations sur le modèle d'historique
+        $historyModelClass = get_class((new EchantillonEnquete())->statusHistories()->getRelated());
 
-        // 1. On récupère le décompte de chaque statut pour TOUS les échantillons en une seule requête.
-        $statsBrutes = EchantillonEnquete::query()
-            ->select('statut', DB::raw('count(*) as total'))
-            ->groupBy('statut')
-            ->pluck('total', 'statut');
+        // IDs des échantillons ayant un historique partiel
+        $echantillonsAvecHistoriquePartielIds = $historyModelClass::query()
+            ->whereIn($historyStatusColumnName, $statutsPartiels)
+            ->distinct('echantillon_enquete_id')
+            ->pluck('echantillon_enquete_id');
 
-        // ✅ 2. On calcule le nombre d'échantillons "Non traités" séparément.
+        // IDs des échantillons complétés
+        $completedEchantillonIds = EchantillonEnquete::query()
+            ->whereIn('statut', $statutsComplets)
+            ->orWhereHas('statusHistories', function ($query) use ($statutsComplets, $historyStatusColumnName) {
+                $query->whereIn($historyStatusColumnName, $statutsComplets);
+            })
+            ->pluck('id');
+
+        // Total des partiels (non attribué)
+        $totalPartiels = $historyModelClass::query()
+            ->whereIn($historyStatusColumnName, $statutsPartiels)
+            ->whereNotIn('echantillon_enquete_id', $completedEchantillonIds)
+            ->distinct('echantillon_enquete_id')
+            ->count();
+            
+        // KPIs globaux pour les RDV
+        $rdvAvecPartiel = EchantillonEnquete::where('statut', $statutRendezVous)
+            ->whereIn('id', $echantillonsAvecHistoriquePartielIds)
+            ->count();
+        $rdvSansPartiel = EchantillonEnquete::where('statut', $statutRendezVous)
+            ->whereNotIn('id', $echantillonsAvecHistoriquePartielIds)
+            ->count();
+
+        // --- 3. Données pour le Graphique ---
+        $statsBrutes = EchantillonEnquete::query()->select('statut', DB::raw('count(*) as total'))->groupBy('statut')->pluck('total', 'statut');
         $nonTraites = EchantillonEnquete::whereNull('utilisateur_id')->count();
-
-        // 3. On définit la liste complète des statuts à afficher et leur traduction.
         $statutsADiscuter = [
-            'non traité' => 'غير معالج', // ✅ Statut ajouté
+            'non traité' => 'غير معالج',
             'en attente' => 'في الانتظار',
             'Complet' => 'مكتمل',
             'Partiel' => 'رد جزئي',
             'refus' => 'رفض',
             'impossible de contacter' => 'إستحالة الإتصال',
-            'un rendez-vous' => 'موعد',
+            'rdv_avec_partiel' => 'موعد (مع جزئي)',
+            'rdv_sans_partiel' => 'موعد (بدون جزئي)',
             'à appeler' => 'إعادة إتصال',
         ];
 
-        // 4. On prépare les données pour le graphique.
         $chartLabels = [];
         $chartData = [];
-
         foreach ($statutsADiscuter as $key => $label) {
             $count = 0;
-
-            if ($key === 'non traité') {
-                $count = $nonTraites; // ✅ On utilise le compte calculé plus haut
-            } elseif ($key === 'Complet') {
-                $count = ($statsBrutes->get('Complet', 0) + $statsBrutes->get('termine', 0));
-            } elseif ($key === 'Partiel') {
-                $count = ($statsBrutes->get('Partiel', 0) + $statsBrutes->get('réponse partielle', 0));
-            } else {
-                $count = $statsBrutes->get($key, 0);
-            }
-            
+            if ($key === 'non traité') { $count = $nonTraites; }
+            elseif ($key === 'Complet') { $count = $statsBrutes->only($statutsComplets)->sum(); }
+            elseif ($key === 'Partiel') { $count = $totalPartiels; }
+            elseif ($key === 'rdv_avec_partiel') { $count = $rdvAvecPartiel; }
+            elseif ($key === 'rdv_sans_partiel') { $count = $rdvSansPartiel; }
+            else { $count = $statsBrutes->get($key, 0); }
             $chartLabels[] = $label;
             $chartData[] = $count;
         }
 
-        // On met à jour le KPI des échantillons terminés.
-        $echantillonsTermines = ($chartData[2] ?? 0) + ($chartData[4] ?? 0) + ($chartData[5] ?? 0); // Complet + Refus + Impossible
-
-        // --- Performance des téléopérateurs (votre logique existante) ---
+        // --- 4. Performance des téléopérateurs ---
         $teleoperateurs = User::role('Téléopérateur')
-            ->withCount(['echantillons as echantillons_traites' => function ($query) {
-                $query->whereIn('statut', ['répondu', 'termine', 'Complet', 'refus', 'impossible de contacter']);
-            }])
-            ->withCount(['rendezVous as rdv_pris'])
+            ->withCount([
+                'echantillons as echantillons_traites' => fn($q) => $q->whereIn('statut', $statutsTraites),
+                'echantillons as echantillons_complets' => fn($q) => $q->whereIn('statut', $statutsComplets),
+                'rendezVous as rdv_avec_partiel_count' => fn($q) => $q->whereIn('echantillon_enquete_id', $echantillonsAvecHistoriquePartielIds),
+                'rendezVous as rdv_sans_partiel_count' => fn($q) => $q->whereNotIn('echantillon_enquete_id', $echantillonsAvecHistoriquePartielIds),
+            ])
             ->get();
-            
+
+        // --- 5. LOGIQUE D'ATTRIBUTION DES PARTIELS (Logique corrigée et juste) ---
+        // On crédite chaque opérateur pour chaque ÉCHANTILLON UNIQUE qu'il a passé en statut partiel.
+        $partielsParOperateur = $historyModelClass::query()
+            ->select('user_id', DB::raw('count(distinct echantillon_enquete_id) as count'))
+            ->whereIn($historyStatusColumnName, $statutsPartiels)
+            ->whereNotIn('echantillon_enquete_id', $completedEchantillonIds) // On exclut les échantillons déjà complétés.
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id'); // Renvoie une collection [user_id => count]
+
+        // On assigne manuellement le compte de partiels à chaque opérateur.
+        foreach ($teleoperateurs as $teleoperateur) {
+            $teleoperateur->echantillons_partiels = $partielsParOperateur->get($teleoperateur->id, 0);
+        }
+
         return view('admin.dashboard.index', compact(
-            'totalTeleoperateurs',
-            'totalEchantillons',
-            'rendezVousAujourdhui',
-            'echantillonsTermines',
-            'chartLabels',
-            'chartData',
-            'teleoperateurs'
+            'totalTeleoperateurs', 'totalEchantillons', 'rendezVousAujourdhui',
+            'echantillonsTermines', 'totalPartiels', 'rdvAvecPartiel', 'rdvSansPartiel',
+            'chartLabels', 'chartData', 'teleoperateurs'
         ));
     }
 }

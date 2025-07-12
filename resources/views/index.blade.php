@@ -319,12 +319,13 @@
     } elseif ($statut == 'à appeler') {
         $badgeClass = 'badge-primary';
         $statutText = 'إعادة إتصال';
-    }  elseif ($statut == 'refus' || $statut == 'refus final') {
-        $badgeClass = 'badge-danger';
-        $statutText = ($statut == 'refus final') ? 'رفض كلي' : 'رفض';
+    
     }  elseif ($statut == 'impossible de contacter') { // Placé au bon endroit
         $badgeClass = 'badge-dark';
         $statutText = 'إستحالة الإتصال';
+    }elseif ($statut == 'Partiel') {
+        $badgeClass = 'badge-info';
+        $statutText = 'رد جزئي';
     }
 @endphp
                     <span class="badge {{ $badgeClass }}">{{ $statutText }}</span>

@@ -22,96 +22,67 @@ class StatistiquesController extends Controller
 
         $userId = Auth::id();
 
-        // --- Calcul des statistiques pour les cartes (INCHANGÉ) ---
+        // --- 1. Calcul des KPIs (Logique optimisée) ---
 
-        $totalRendezVous = RendezVous::where('utilisateur_id', $userId)->count();
-        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $userId)->distinct('entreprise_id')->count('entreprise_id');
-        $nombreEntreprisesRepondues = EchantillonEnquete::where('utilisateur_id', $userId)->whereIn('statut', ['répondu', 'Complet', 'termine'])->distinct('entreprise_id')->count('entreprise_id');
+        // Statuts considérés comme une réponse pour un calcul précis
+        $statutsRepondus = ['Complet', 'termine', 'Partiel', 'réponse partielle', 'refus', 'refus final', 'un rendez-vous', 'impossible de contacter', 'répondu'];
+
+        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $userId)->count();
+        $nombreEntreprisesRepondues = EchantillonEnquete::where('utilisateur_id', $userId)->whereIn('statut', $statutsRepondus)->count();
         
-        $tousLesRdv = RendezVous::where('utilisateur_id', $userId)->pluck('heure_rdv');
-        $rendezVousAujourdHui = 0;
-        foreach ($tousLesRdv as $dateStr) {
-            try {
-                if (Carbon::parse($dateStr)->isToday()) {
-                    $rendezVousAujourdHui++;
-                }
-            } catch (\Exception $e) { continue; }
-        }
+        // ✅ CORRECTION: Utilisation de 'utilisateur_id' au lieu de 'user_id'
+        $totalRendezVous = RendezVous::where('utilisateur_id', $userId)->count();
+        $rendezVousAujourdHui = RendezVous::where('utilisateur_id', $userId)->whereDate('heure_rdv', Carbon::today())->count();
 
-        // --- NOUVELLE LOGIQUE OPTIMISÉE POUR COMPTER TOUS LES STATUTS ---
+        // --- 2. Tableau de distribution des statuts (Logique optimisée) ---
 
-        // 1. On récupère tous les statuts et leur compte pour l'utilisateur en une seule requête.
+        // On récupère tous les comptes de statuts en une seule requête
         $statsBrutes = EchantillonEnquete::where('utilisateur_id', $userId)
             ->select('statut', DB::raw('count(*) as total'))
             ->groupBy('statut')
             ->pluck('total', 'statut');
 
-        // 2. On définit la liste complète des statuts à afficher.
+        // On fusionne les statuts similaires pour un affichage clair
         $entreprisesParStatut = [
             'en attente'              => $statsBrutes->get('en attente', 0),
             'Complet'                 => $statsBrutes->get('Complet', 0) + $statsBrutes->get('termine', 0),
             'Partiel'                 => $statsBrutes->get('Partiel', 0) + $statsBrutes->get('réponse partielle', 0),
-            'refus'                   => $statsBrutes->get('refus', 0),
+            'refus'                   => $statsBrutes->get('refus', 0) + $statsBrutes->get('refus final', 0),
             'impossible de contacter' => $statsBrutes->get('impossible de contacter', 0),
             'un rendez-vous'          => $statsBrutes->get('un rendez-vous', 0),
             'à appeler'               => $statsBrutes->get('à appeler', 0),
-            
         ];
+        
+        // On retire les statuts qui ont un compte de zéro pour ne pas surcharger le tableau
+        $entreprisesParStatut = array_filter($entreprisesParStatut);
 
-        // --- Calcul des autres statistiques (INCHANGÉ) ---
-
-        $rendezVousParStatutRaw = RendezVous::where('utilisateur_id', $userId)
-            ->select('statut', DB::raw('count(*) as total'))
-            ->groupBy('statut')
-            ->pluck('total', 'statut');
-
-        $rendezVousParStatut = [
-            'en attente'              => $statsBrutes->get('en attente', 0),
-            'Complet'                 => $statsBrutes->get('Complet', 0) + $statsBrutes->get('termine', 0), // Fusionne Complet et termine
-            'Partiel'                 => $statsBrutes->get('Partiel', 0) + $statsBrutes->get('réponse partielle', 0), // Fusionne Partiel et réponse partielle
-            'refus'                   => $statsBrutes->get('refus', 0),
-            'impossible de contacter' => $statsBrutes->get('impossible de contacter', 0),
-            'un rendez-vous'          => $statsBrutes->get('un rendez-vous', 0),
-            'à appeler'               => $statsBrutes->get('à appeler', 0),
-            
-        ];
-
-        $startDate = Carbon::today()->subDays(6)->startOfDay();
-        $endDate = Carbon::today()->endOfDay();
-        $evolutionData = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::today()->subDays($i);
-            $evolutionData[$date->format('Y-m-d')] = 0;
-        }
-        foreach ($tousLesRdv as $dateStr) {
-            try {
-                $date = Carbon::parse($dateStr);
-                if ($date->between($startDate, $endDate)) {
-                    $evolutionData[$date->format('Y-m-d')]++;
-                }
-            } catch (\Exception $e) { continue; }
-        }
+        // --- 3. Données pour le tableau d'évolution (7 derniers jours) ---
+        
         $evolutionLabels = [];
         $evolutionValues = [];
-        foreach ($evolutionData as $dateKey => $count) {
-            $evolutionLabels[] = '"' . Carbon::parse($dateKey)->format('d/m') . '"';
-            $evolutionValues[] = $count;
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $evolutionLabels[] = $date->locale('fr')->translatedFormat('D d/m');
+            // On compte directement dans la base de données pour chaque jour
+            // ✅ CORRECTION: Utilisation de 'utilisateur_id' au lieu de 'user_id'
+            $evolutionValues[] = RendezVous::where('utilisateur_id', $userId)
+                ->whereDate('created_at', $date)
+                ->count();
         }
         
+        // On passe les données sous forme de tableaux PHP, ce qui est plus propre pour la vue
         $evolutionRendezVous = [
-            'labels' => implode(', ', $evolutionLabels),
-            'data'   => implode(', ', $evolutionValues),
+            'labels' => $evolutionLabels,
+            'data'   => $evolutionValues,
         ];
 
-        // --- Retourner la vue avec toutes les données ---
-        
+        // --- 4. Retourner la vue avec toutes les données ---
         return view('statistiques', compact(
             'totalRendezVous', 
             'rendezVousAujourdHui', 
             'nombreEntreprisesAttribuees', 
             'nombreEntreprisesRepondues', 
-            'rendezVousParStatut', 
-            'entreprisesParStatut', // La nouvelle variable avec tous les comptes
+            'entreprisesParStatut',
             'evolutionRendezVous'
         ));
     }

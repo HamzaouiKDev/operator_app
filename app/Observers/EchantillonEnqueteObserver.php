@@ -10,39 +10,54 @@ use Illuminate\Support\Facades\Log;
 class EchantillonEnqueteObserver
 {
     /**
-     * Gère l'événement "updating" (avant la sauvegarde).
-     *
-     * @param  \App\Models\EchantillonEnquete  $echantillonEnquete
-     * @return bool|void
+     * Gère l'événement "created" (après la création d'un nouvel échantillon).
+     * C'est la fonction qui manquait pour compter les "nouveaux partiels".
+     */
+    public function created(EchantillonEnquete $echantillonEnquete): void
+    {
+        // On enregistre le premier statut dans l'historique.
+        $this->logStatus($echantillonEnquete, null, $echantillonEnquete->statut);
+    }
+
+    /**
+     * Gère l'événement "updating" (avant la mise à jour d'un échantillon existant).
      */
     public function updating(EchantillonEnquete $echantillonEnquete): bool
     {
+        // Si le statut n'a pas changé, on ne fait rien.
+        if (!$echantillonEnquete->isDirty('statut')) {
+            return true;
+        }
+
         $originalStatus = $echantillonEnquete->getOriginal('statut');
         $newStatus = $echantillonEnquete->statut;
-
-        // ✅ MISE À JOUR ICI : La liste des statuts finaux a été changée.
         $finalStatuses = ['Complet', 'refus', 'impossible de contacter'];
 
-        // Si le statut original est DÉJÀ dans la liste des statuts finaux,
-        // on bloque la nouvelle sauvegarde pour éviter toute modification.
+        // On bloque la modification si le statut est déjà final.
         if (in_array($originalStatus, $finalStatuses)) {
             Log::warning("Observer: Tentative de modification du statut final '{$originalStatus}' pour l'échantillon #{$echantillonEnquete->id} bloquée.");
-            // On empêche la sauvegarde en retournant false.
-            return false;
+            return false; // Bloque la sauvegarde
         }
 
-        // Créer l'historique si le statut a réellement changé.
-        if ($echantillonEnquete->isDirty('statut')) {
+        // On enregistre le changement de statut dans l'historique.
+        $this->logStatus($echantillonEnquete, $originalStatus, $newStatus);
+
+        return true; // Autorise la sauvegarde
+    }
+
+    /**
+     * Méthode privée et propre pour enregistrer dans l'historique.
+     */
+    private function logStatus(EchantillonEnquete $echantillon, ?string $ancien, string $nouveau): void
+    {
+        if (Auth::check()) {
             EchantillonStatutHistory::create([
-                'echantillon_enquete_id' => $echantillonEnquete->id,
+                'echantillon_enquete_id' => $echantillon->id,
                 'user_id'                => Auth::id(),
-                'ancien_statut'          => $originalStatus,
-                'nouveau_statut'         => $newStatus,
-                'commentaire'            => $echantillonEnquete->commentaire,
+                'ancien_statut'          => $ancien, // Sera null lors de la création
+                'nouveau_statut'         => $nouveau,
+                'commentaire'            => $echantillon->commentaire,
             ]);
         }
-
-        // On autorise la sauvegarde.
-        return true;
     }
 }

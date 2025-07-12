@@ -19,98 +19,133 @@ class SupervisorController extends Controller
      */
     public function index(Request $request)
     {
-        // Récupère les téléopérateurs pour le menu déroulant
+        // --- 1. Définitions et Pré-calculs (Logique de l'Admin Dashboard) ---
+        $statutsComplets = ['Complet', 'termine'];
+        $statutsPartiels = ['Partiel', 'réponse partielle'];
+        $statutsRefus = ['refus', 'refus final'];
+        $statutRendezVous = 'un rendez-vous';
+        $statutsImpossible = ['impossible de contacter'];
+        $statutsAAppeler = ['à appeler'];
+        $historyStatusColumnName = 'nouveau_statut';
+
         $teleoperateurs = User::role('Téléopérateur')->orderBy('name')->get();
         $viewData = ['teleoperateurs' => $teleoperateurs];
 
-        // --- DÉBUT : NOUVEAU CALCUL POUR L'AVANCEMENT GÉNÉRAL PAR STATUT ---
+        $historyModelClass = get_class((new EchantillonEnquete())->statusHistories()->getRelated());
+
+        // IDs des échantillons ayant un historique partiel
+        $echantillonsAvecHistoriquePartielIds = $historyModelClass::query()
+            ->whereIn($historyStatusColumnName, $statutsPartiels)
+            ->distinct('echantillon_enquete_id')
+            ->pluck('echantillon_enquete_id');
+
+        // IDs des échantillons complétés
+        $completedEchantillonIds = EchantillonEnquete::query()
+            ->whereIn('statut', $statutsComplets)
+            ->orWhereHas('statusHistories', function ($query) use ($statutsComplets, $historyStatusColumnName) {
+                $query->whereIn($historyStatusColumnName, $statutsComplets);
+            })
+            ->pluck('id');
+
+        // --- 2. Calcul pour l'Avancement Général (Barres de Progression) ---
         $nombreTotalEchantillons = EchantillonEnquete::count();
-        
-        // Obtenir le compte pour chaque statut
-        $comptesParStatut = EchantillonEnquete::query()
-            ->select('statut', DB::raw('count(*) as total'))
-            ->groupBy('statut')
-            ->pluck('total', 'statut');
-
         $avancementParStatut = [];
-        $totalTraite = 0;
 
-        $statutsConfig = [
-            ['noms' => ['Complet', 'termine'], 'label' => 'مكتمل', 'couleur' => '#28a745'],
-            ['noms' => ['Partiel'], 'label' => 'مكتمل جزئيا', 'couleur' => '#ffc107'],
-            ['noms' => ['un rendez-vous'], 'label' => 'موعد', 'couleur' => '#17a2b8'],
-            ['noms' => ['refus', 'refus final'], 'label' => 'رفض', 'couleur' => '#dc3545'],
-            ['noms' => ['à appeler'], 'label' => 'إعادة إتصال', 'couleur' => '#007bff'],
-            ['noms' => ['impossible de contacter'], 'label' => 'إستحالة الإتصال', 'couleur' => '#6c757d'],
-        ];
+        if ($nombreTotalEchantillons > 0) {
+            // Calculs précis basés sur la logique de l'admin
+            $comptesComplets = EchantillonEnquete::whereIn('statut', $statutsComplets)->count();
+            $comptesPartiels = $historyModelClass::query()->whereIn($historyStatusColumnName, $statutsPartiels)->whereNotIn('echantillon_enquete_id', $completedEchantillonIds)->distinct('echantillon_enquete_id')->count();
+            $comptesRdvAvecPartiel = EchantillonEnquete::where('statut', $statutRendezVous)->whereIn('id', $echantillonsAvecHistoriquePartielIds)->count();
+            $comptesRdvSansPartiel = EchantillonEnquete::where('statut', $statutRendezVous)->whereNotIn('id', $echantillonsAvecHistoriquePartielIds)->count();
+            $comptesRefus = EchantillonEnquete::whereIn('statut', $statutsRefus)->count();
+            $comptesAAppeler = EchantillonEnquete::whereIn('statut', $statutsAAppeler)->count();
+            $comptesImpossible = EchantillonEnquete::whereIn('statut', $statutsImpossible)->count();
 
-        foreach ($statutsConfig as $config) {
-            $count = 0;
-            foreach ($config['noms'] as $nom) {
-                $count += $comptesParStatut->get($nom, 0);
-            }
-            
-            if ($nombreTotalEchantillons > 0) {
-                $pourcentage = ($count / $nombreTotalEchantillons) * 100;
+            $totalTraite = $comptesComplets + $comptesPartiels + $comptesRdvAvecPartiel + $comptesRdvSansPartiel + $comptesRefus + $comptesAAppeler + $comptesImpossible;
+            $enAttenteCount = $nombreTotalEchantillons - $totalTraite;
+
+            $statutsConfig = [
+                ['label' => 'مكتمل', 'count' => $comptesComplets, 'couleur' => '#10b981'],
+                ['label' => 'رد جزئي', 'count' => $comptesPartiels, 'couleur' => '#a78bfa'],
+                ['label' => 'موعد (مع جزئي)', 'count' => $comptesRdvAvecPartiel, 'couleur' => '#1abc9c'],
+                ['label' => 'موعد (بدون جزئي)', 'count' => $comptesRdvSansPartiel, 'couleur' => '#95a5a6'],
+                ['label' => 'رفض', 'count' => $comptesRefus, 'couleur' => '#ef4444'],
+                ['label' => 'إعادة إتصال', 'count' => $comptesAAppeler, 'couleur' => '#f97316'],
+                ['label' => 'إستحالة الإتصال', 'count' => $comptesImpossible, 'couleur' => '#64748b'],
+                ['label' => 'في الانتظار', 'count' => $enAttenteCount > 0 ? $enAttenteCount : 0, 'couleur' => '#e5e7eb'],
+            ];
+
+            foreach ($statutsConfig as $config) {
                 $avancementParStatut[] = [
                     'nom' => $config['label'],
-                    'count' => $count,
-                    'pourcentage' => $pourcentage,
+                    'count' => $config['count'],
+                    'pourcentage' => ($config['count'] / $nombreTotalEchantillons) * 100,
                     'couleur' => $config['couleur'],
                 ];
             }
-            $totalTraite += $count;
         }
-
-        // Calculer les échantillons "En attente"
-        $enAttenteCount = $nombreTotalEchantillons - $totalTraite;
-        if ($nombreTotalEchantillons > 0) {
-             $avancementParStatut[] = [
-                'nom' => 'في الانتظار',
-                'count' => $enAttenteCount,
-                'pourcentage' => ($enAttenteCount / $nombreTotalEchantillons) * 100,
-                'couleur' => '#e9ecef',
-            ];
-        }
-       
         $viewData['avancementParStatut'] = $avancementParStatut;
-        // --- FIN : NOUVEAU CALCUL ---
 
-
+        // --- 3. Calculs pour un Opérateur Spécifique ---
         $teleoperateurId = $request->input('teleoperateur_id');
-
         if ($teleoperateurId) {
             $selectedTeleoperateur = User::findOrFail($teleoperateurId);
-
             if (!$selectedTeleoperateur->hasRole('Téléopérateur')) {
                 abort(403, 'L\'utilisateur sélectionné n\'est pas un téléopérateur.');
             }
 
             $viewData['selectedTeleoperateur'] = $selectedTeleoperateur;
-            
-            // --- Calculs des Statistiques Détaillées par Opérateur ---
-            $enqueteIds = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)->pluck('id');
-            $statutsTraites = ['Complet', 'termine', 'Partiel', 'refus', 'refus final', 'un rendez-vous', 'impossible de contacter'];
 
-            // KPIs
-            $viewData['nombreEntreprisesAttribuees'] = count($enqueteIds);
-            $viewData['totalRendezVous'] = RendezVous::whereIn('echantillon_enquete_id', $enqueteIds)->count();
-            $viewData['echantillonsTraites'] = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)->whereIn('statut', $statutsTraites)->count();
-            
-            $nombreEchantillonsComplets = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)->whereIn('statut', ['Complet', 'termine'])->count();
-            $viewData['tauxDefficacite'] = ($viewData['nombreEntreprisesAttribuees'] > 0) ? round(($nombreEchantillonsComplets / $viewData['nombreEntreprisesAttribuees']) * 100, 2) : 0;
+            // KPIs de performance
+            $statutsTraites = ['Complet', 'termine', 'Partiel', 'réponse partielle', 'refus', 'impossible de contacter', 'un rendez-vous', 'à appeler', 'répondu'];
 
-            // Tables
-            $viewData['entreprisesParStatut'] = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)->groupBy('statut')->selectRaw('statut, count(*) as count')->pluck('count', 'statut');
-            $viewData['statutsAujourdhui'] = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)->whereDate('updated_at', Carbon::today())->groupBy('statut')->selectRaw('statut, count(*) as count')->pluck('count', 'statut');
+            $statsOperateur = User::where('id', $teleoperateurId)->withCount([
+                'echantillons as echantillons_traites' => fn($q) => $q->whereIn('statut', $statutsTraites),
+                'echantillons as echantillons_complets' => fn($q) => $q->whereIn('statut', $statutsComplets),
+                'rendezVous as rdv_avec_partiel_count' => fn($q) => $q->whereIn('echantillon_enquete_id', $echantillonsAvecHistoriquePartielIds),
+                'rendezVous as rdv_sans_partiel_count' => fn($q) => $q->whereNotIn('echantillon_enquete_id', $echantillonsAvecHistoriquePartielIds),
+            ])->first();
+
+            // Logique de calcul pour les partiels de l'opérateur
+            $partielsActuels = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)
+                ->whereIn('statut', $statutsPartiels)
+                ->count();
+
+            $partielsHistorique = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)
+                ->whereNotIn('statut', $statutsPartiels)
+                ->whereNotIn('statut', $statutsComplets)
+                ->whereHas('statusHistories', function ($query) use ($statutsPartiels, $historyStatusColumnName) {
+                    $query->whereIn($historyStatusColumnName, $statutsPartiels);
+                })
+                ->whereDoesntHave('statusHistories', function ($query) use ($statutsComplets, $historyStatusColumnName) {
+                    $query->whereIn($historyStatusColumnName, $statutsComplets);
+                })
+                ->count();
             
-            // Chart
+            $statsOperateur->echantillons_partiels = $partielsActuels + $partielsHistorique;
+            $viewData['statsOperateur'] = $statsOperateur;
+
+            // Données pour le graphique d'évolution
             $chartData = ['labels' => [], 'completedData' => [], 'partialData' => []];
             for ($i = 6; $i >= 0; $i--) {
                 $date = Carbon::today()->subDays($i);
                 $chartData['labels'][] = $date->locale('fr')->translatedFormat('D d/m');
-                $chartData['completedData'][] = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)->whereIn('statut', ['Complet', 'termine'])->whereDate('updated_at', $date)->count();
-                $chartData['partialData'][] = EchantillonEnquete::where('utilisateur_id', $teleoperateurId)->where('statut', 'Partiel')->whereDate('updated_at', $date)->count();
+                
+                // ✅ CORRECTION: Utilisation de whereBetween pour une requête de date plus robuste
+                $startDate = $date->copy()->startOfDay();
+                $endDate = $date->copy()->endOfDay();
+                
+                $chartData['completedData'][] = $historyModelClass::where('user_id', $teleoperateurId)
+                    ->whereIn($historyStatusColumnName, $statutsComplets)
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->distinct('echantillon_enquete_id')
+                    ->count();
+
+                $chartData['partialData'][] = $historyModelClass::where('user_id', $teleoperateurId)
+                    ->whereIn($historyStatusColumnName, $statutsPartiels)
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->distinct('echantillon_enquete_id')
+                    ->count();
             }
             $viewData['evolutionChartData'] = $chartData;
         }

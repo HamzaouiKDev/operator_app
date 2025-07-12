@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>تسجيل الدخول - المعهد الوطني للاحصاء</title>
+    <link rel="icon" href="{{ URL::asset('assets/img/brand/ins.svg') }}" type="image/svg+xml"/>!
 
     {{-- <meta name="csrf-token" content="{{ csrf_token() }}"> --}}
 

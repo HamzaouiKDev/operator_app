@@ -43,15 +43,15 @@
              border-right: 5px solid #3498db; /* Bordure par défaut */
              border-left: 0;
              transition: all 0.3s ease-in-out;
-         }
+       }
         .kpi-card:hover {
              transform: translateY(-5px);
              box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-         }
+       }
         .kpi-icon {
              font-size: 3rem;
              opacity: 0.3;
-         }
+       }
 
         /* ----- Tableaux Modernes ----- */
         .table-custom {
@@ -98,6 +98,13 @@
             border-radius: 25px;
             font-weight: 600;
             font-size: 0.8rem;
+        }
+        .table-custom .stat-number {
+            font-size: 1rem;
+            font-weight: 700; /* Assure que le texte est bien gras */
+            color: #000000 !important; /* ✅ Force la couleur du texte en noir */
+            min-width: 40px;
+            display: inline-block;
         }
     </style>
 @endsection
@@ -158,7 +165,7 @@
                             <div class="mr-auto">
                                 <h6 class="mb-3 tx-12 text-white">العينات المكتملة</h6>
                                 <h4 class="tx-20 font-weight-bold mb-1 text-white">{{ $echantillonsTermines }}</h4>
-                                <p class="mb-0 tx-12 text-white op-7">جميع الحالات المعالجة</p>
+                                <p class="mb-0 tx-12 text-white op-7">جميع الحالات المكتملة</p>
                             </div>
                             <i class="fas fa-check-circle kpi-icon"></i>
                         </div>
@@ -181,10 +188,57 @@
             </div>
         </div>
 
+        {{-- NOUVELLE RANGÉE DE CARTES KPI --}}
+        <div class="row row-sm mt-4">
+            <div class="col-xl-4 col-lg-6 col-md-6 col-xm-12">
+                <div class="card overflow-hidden sales-card bg-info-gradient kpi-card" style="border-right-color: #a78bfa;">
+                    <div class="pl-3 pt-3 pr-3 pb-2 pt-0">
+                        <div class="d-flex justify-content-between">
+                            <div class="mr-auto">
+                                <h6 class="mb-3 tx-12 text-white">إجمالي الجزئيات</h6>
+                                <h4 class="tx-20 font-weight-bold mb-1 text-white">{{ $totalPartiels }}</h4>
+                                <p class="mb-0 tx-12 text-white op-7">العينات التي لم تكتمل بعد</p>
+                            </div>
+                            <i class="fas fa-puzzle-piece kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-6 col-md-6 col-xm-12">
+                <div class="card overflow-hidden sales-card bg-teal-gradient kpi-card" style="border-right-color: #1abc9c;">
+                    <div class="pl-3 pt-3 pr-3 pb-2 pt-0">
+                        <div class="d-flex justify-content-between">
+                            <div class="mr-auto">
+                                <h6 class="mb-3 tx-12 text-white">مواعيد (مع رد جزئي)</h6>
+                                <h4 class="tx-20 font-weight-bold mb-1 text-white">{{ $rdvAvecPartiel }}</h4>
+                                <p class="mb-0 tx-12 text-white op-7">مواعيد لعينات مع رد جزئي</p>
+                            </div>
+                            <i class="fas fa-calendar-check kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-6 col-md-6 col-xm-12">
+                <div class="card overflow-hidden sales-card bg-secondary-gradient kpi-card" style="border-right-color: #95a5a6;">
+                    <div class="pl-3 pt-3 pr-3 pb-2 pt-0">
+                        <div class="d-flex justify-content-between">
+                            <div class="mr-auto">
+                                <h6 class="mb-3 tx-12 text-white">مواعيد (بدون رد جزئي)</h6>
+                                <h4 class="tx-20 font-weight-bold mb-1 text-white">{{ $rdvSansPartiel }}</h4>
+                                <p class="mb-0 tx-12 text-white op-7">مواعيد لعينات جديدة</p>
+                            </div>
+                            <i class="fas fa-calendar-plus kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         {{-- Contenu principal : Tableaux et Graphique (Nouveau Design Conservé) --}}
         <div class="row row-sm mt-4">
             {{-- Tableau des performances --}}
-            <div class="col-lg-12 col-xl-7 mb-4">
+            <div class="col-lg-12 col-xl-8 mb-4">
                 <div class="card">
                     <div class="card-header">
                         <h4 class="card-title mb-0">أداء المشغلين</h4>
@@ -195,23 +249,28 @@
                             <table class="table table-custom">
                                 <thead>
                                     <tr>
-                                        <th>المعرف</th>
                                         <th>الاسم</th>
-                                        <th>العينات المعالجة</th>
-                                        <th>المواعيد المأخوذة</th>
+                                        <th>معالج</th>
+                                        <th>مكتمل</th>
+                                        <th>جزئي</th>
+                                        <th>موعد (مع رد جزئي)</th>
+                                        <th>موعد (بدون رد جزئي)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($teleoperateurs as $teleoperateur)
                                         <tr>
-                                            <td>{{ $teleoperateur->id }}</td>
                                             <td>{{ $teleoperateur->name }}</td>
-                                            <td><span class="badge bg-success-transparent text-success badge-custom">{{ $teleoperateur->echantillons_traites }}</span></td>
-                                            <td><span class="badge bg-info-transparent text-info badge-custom">{{ $teleoperateur->rdv_pris }}</span></td>
+                                            <td><span class="badge bg-secondary-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_traites }}</span></td>
+                                            <td><span class="badge bg-success-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_complets }}</span></td>
+                                            <td><span class="badge bg-warning-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_partiels }}</span></td>
+                                            {{-- ✅ NOUVELLES COLONNES --}}
+                                            <td><span class="badge bg-teal-transparent badge-custom stat-number">{{ $teleoperateur->rdv_avec_partiel_count }}</span></td>
+                                            <td><span class="badge bg-info-transparent badge-custom stat-number">{{ $teleoperateur->rdv_sans_partiel_count }}</span></td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted">لم يتم العثور على أي مشغل هاتفي.</td>
+                                            <td colspan="6" class="text-center text-muted">لم يتم العثور على أي مشغل هاتفي.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -222,7 +281,7 @@
             </div>
 
             {{-- Graphique de distribution --}}
-            <div class="col-lg-12 col-xl-5 mb-4">
+            <div class="col-lg-12 col-xl-4 mb-4">
                 <div class="card">
                     <div class="card-header">
                         <h4 class="card-title mb-0">توزيع الحالات</h4>
@@ -250,6 +309,7 @@
                         datasets: [{
                             label: 'عدد العينات',
                             data: @json($chartData),
+                            // ✅ MISE À JOUR: Nouvelles couleurs pour le graphique
                             backgroundColor: [
                                 '#f59e0b', // Orange Ambré (Non traité)
                                 '#e5e7eb', // Gris Très Clair (En attente)
@@ -257,7 +317,8 @@
                                 '#a78bfa', // Violet Lavande (Partiel)
                                 '#ef4444', // Rouge Vif (Refus)
                                 '#64748b', // Gris Ardoise (Impossible de contacter)
-                                '#0ea5e9', // Bleu Ciel (Rendez-vous)
+                                '#1abc9c', // Teal (RDV avec partiel)
+                                '#95a5a6', // Gris Secondaire (RDV sans partiel)
                                 '#f97316'  // Orange Vif (À appeler)
                             ],
                             borderColor: '#fff',

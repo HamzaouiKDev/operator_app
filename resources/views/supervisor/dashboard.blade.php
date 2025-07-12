@@ -9,60 +9,87 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* La police 'Cairo' est appliquée à tous les éléments pour une cohérence parfaite */
+        :root {
+            --primary-color: #4A90E2; /* Bleu doux */
+            --success-color: #50E3C2; /* Vert menthe */
+            --warning-color: #F5A623; /* Orange */
+            --danger-color: #D0021B;  /* Rouge */
+            --info-color: #4A4A4A;    /* Gris foncé */
+            --teal-color: #008080;   /* Teal */
+            --light-gray: #f8f9fa;
+            --dark-gray: #343a40;
+            --text-color: #495057;
+            --border-color: #dee2e6;
+        }
+
         body, h1, h2, h3, h4, h5, h6, .main-content-title, p, span, div {
             font-family: 'Cairo', sans-serif !important;
+            color: var(--text-color);
         }
 
         /* ----- Style Général des Cartes ----- */
         .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease-in-out;
+            background-color: #fff;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
         }
         .card-header {
             background-color: #fff;
-            border-bottom: 1px solid #f0f0f0;
-            padding: 1.25rem 1.5rem;
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
         }
         .card-title {
             font-weight: 700;
-            color: #1a2130;
+            color: var(--dark-gray);
         }
 
         /* ----- Style des Cartes KPI (Indicateurs Clés) ----- */
         .kpi-card {
-    border-radius: 16px;
-    color: #212529; /* Texte noir foncé */
-    position: relative;
-    overflow: hidden;
-    border: none;
-}
-        .kpi-card:hover {
-            transform: translateY(-6px) scale(1.03);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+            border-left: 6px solid;
+            background-color: var(--light-gray);
         }
         .kpi-card .kpi-icon {
-            position: absolute;
-            top: 50%;
-            left: 15px;
-            transform: translateY(-50%) rotate(-15deg);
-            font-size: 4.5rem;
-            opacity: 0.15;
-            transition: all 0.4s ease;
+            font-size: 2.5rem;
+            margin-right: 1.5rem;
+            opacity: 0.8;
         }
-        .kpi-card:hover .kpi-icon {
-            transform: translateY(-50%) rotate(0deg) scale(1.1);
-            opacity: 0.25;
+        .kpi-card .kpi-content h6 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
         }
-        /* Palette de couleurs avec dégradés pour un look moderne */
-        .bg-c-primary { background: linear-gradient(45deg, #3b82f6, #60a5fa); } /* Bleu */
-        .bg-c-success { background: linear-gradient(45deg, #22c55e, #4ade80); } /* Vert */
-        .bg-c-danger  { background: linear-gradient(45deg, #ef4444, #f87171); } /* Rouge */
-        .bg-c-warning { background: linear-gradient(45deg, #f97316, #fb923c); } /* Orange */
+        .kpi-card .kpi-content h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark-gray);
+            margin-bottom: 0;
+        }
+        .kpi-card.primary { border-color: var(--primary-color); }
+        .kpi-card.primary .kpi-icon { color: var(--primary-color); }
+
+        .kpi-card.success { border-color: var(--success-color); }
+        .kpi-card.success .kpi-icon { color: var(--success-color); }
+
+        .kpi-card.warning { border-color: var(--warning-color); }
+        .kpi-card.warning .kpi-icon { color: var(--warning-color); }
+
+        .kpi-card.info { border-color: var(--info-color); }
+        .kpi-card.info .kpi-icon { color: var(--info-color); }
+        
+        .kpi-card.teal { border-color: var(--teal-color); }
+        .kpi-card.teal .kpi-icon { color: var(--teal-color); }
 
         /* ----- Style des Barres de Progression ----- */
         .progress-label {
@@ -71,54 +98,24 @@
             margin-bottom: 0.5rem;
         }
         .progress {
-            height: 12px !important;
+            height: 10px !important;
             border-radius: 25px;
-            background-color: #f3f4f6;
-            overflow: visible; /* Permet à l'infobulle de déborder */
+            background-color: #e9ecef;
         }
         .progress-bar {
             border-radius: 25px;
-            position: relative;
             transition: width 0.6s ease;
         }
-        /* Style pour le texte à l'intérieur de la barre */
-        .visible-progress-text {
-            font-weight: 700;
-            font-size: 0.7rem;
-            line-height: 1;
+        
+        /* Formulaire */
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        .progress-bar-dark-text {
-            color: #1f2937 !important;
-        }
-
-        /* ----- Style des Tableaux ----- */
-        .table-custom {
-            border-collapse: separate;
-            border-spacing: 0 10px; /* Espace vertical entre les lignes */
-        }
-        .table-custom tr {
-            background-color: #fff;
-            transition: all 0.2s ease;
-        }
-        .table-custom td, .table-custom th {
-            border: none;
-            padding: 1rem;
-            vertical-align: middle;
-        }
-        .table-custom thead th {
-            font-weight: 700;
-            color: #888;
-        }
-        .table-custom tbody tr:hover {
-            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-            transform: scale(1.01);
-        }
-        .badge-custom {
-            padding: 0.5em 0.9em;
-            border-radius: 25px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            color: white; /* Assurer que le texte du badge est blanc par défaut */
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
         }
     </style>
 @endsection
@@ -143,53 +140,33 @@
             <h4 class="card-title mb-0">التقدم العام للاستبيان حسب الحالة</h4>
         </div>
         <div class="card-body">
-            @php
-                // Palette de couleurs unifiée pour tout le dashboard
-                $colorMap = [
-                    'مكتمل'           => '#10b981', // Vert Émeraude
-                    'مكتمل جزئيا'      => '#f59e0b', // Orange Ambré
-                    'موعد'            => '#0ea5e9', // Bleu Ciel
-                    'رفض'             => '#ef4444', // Rouge Vif
-                    'إعادة إتصال'      => '#8b5cf6', // Violet Intense
-                    'إستحالة الإتصال' => '#64748b', // Gris Ardoise
-                    'في الانتظار'     => '#e5e7eb', // Gris Très Clair
-                ];
-            @endphp
-            @if(isset($avancementParStatut))
+            @if(isset($avancementParStatut) && !empty($avancementParStatut))
                 @foreach($avancementParStatut as $statut)
-                    @php
-                        $couleur = $colorMap[$statut['nom']] ?? '#6b7280';
-                        $percentage = $statut['pourcentage'];
-                        $isLightBg = $statut['nom'] === 'في الانتظار';
-                    @endphp
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between">
-                            <h6 class="progress-label">{{ $statut['nom'] }}</h6>
-                            <span class="tx-14 font-weight-bold" style="color: {{ $couleur }};">{{ $statut['count'] }}</span>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <h6 class="progress-label mb-0">{{ $statut['nom'] }}</h6>
+                            <span class="tx-14 font-weight-bold" style="color: {{ $statut['couleur'] }};">{{ $statut['count'] }}</span>
                         </div>
                         <div class="progress">
-                            <div class="progress-bar d-flex align-items-center justify-content-center" 
+                            <div class="progress-bar" 
                                  role="progressbar" 
-                                 style="width: {{ $percentage }}%; background-color: {{ $couleur }};" 
-                                 aria-valuenow="{{ $percentage }}" 
+                                 style="width: {{ $statut['pourcentage'] }}%; background-color: {{ $statut['couleur'] }};" 
+                                 aria-valuenow="{{ $statut['pourcentage'] }}" 
                                  aria-valuemin="0" 
                                  aria-valuemax="100">
-                                @if($percentage > 5) 
-                                    <span class="visible-progress-text {{ $isLightBg ? 'progress-bar-dark-text' : '' }}">
-                                        {{ round($percentage, 1) }}%
-                                    </span>
-                                @endif
                             </div>
                         </div>
                     </div>
                 @endforeach
+            @else
+                <p class="text-muted text-center">لا توجد بيانات لعرضها.</p>
             @endif
         </div>
     </div>
 
     {{-- Formulaire de sélection par opérateur --}}
     <div class="card mg-b-20">
-         <div class="card-header">
+        <div class="card-header">
             <h4 class="card-title mb-0">عرض إحصائيات حسب المشغل</h4>
         </div>
         <div class="card-body">
@@ -197,7 +174,6 @@
                 <div class="row align-items-end">
                     <div class="col-md-5">
                         <label for="teleoperateur_id" class="form-label font-weight-bold">اختر مشغلًا:</label>
-                        {{-- AMÉLIORATION UX : Le formulaire se soumet automatiquement au changement --}}
                         <select name="teleoperateur_id" id="teleoperateur_id" class="form-control" onchange="this.form.submit()">
                             <option value="">-- عرض الإحصائيات لجميع المشغلين --</option>
                             @foreach($teleoperateurs as $teleoperateur)
@@ -216,119 +192,52 @@
     {{-- Cette section s'affiche uniquement si un opérateur est sélectionné --}}
     @if(isset($selectedTeleoperateur))
     <hr class="my-4">
-    <h3 class="mt-4 mb-4 text-center">إحصائيات لـ : <span class="text-primary">{{ $selectedTeleoperateur->name }}</span></h3>
+    <h3 class="mt-4 mb-4 text-center">إحصائيات لـ : <span style="color: var(--primary-color);">{{ $selectedTeleoperateur->name }}</span></h3>
 
     {{-- Cartes KPI (Indicateurs Clés) --}}
     <div class="row row-sm">
-        <div class="col-xl-3 col-lg-6 mb-4">
-            <div class="card kpi-card bg-c-primary">
-                <div class="card-body text-center">
-                    <i class="fas fa-building kpi-icon"></i>
-                    <h6 class="mb-3 tx-14">إجمالي العينات المخصصة</h6>
-                    <h3 class="font-weight-bold mb-1">{{ $nombreEntreprisesAttribuees ?? 0 }}</h3>
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card kpi-card primary">
+                <i class="fas fa-tasks kpi-icon"></i>
+                <div class="kpi-content">
+                    <h6>العينات المعالجة</h6>
+                    <h3>{{ $statsOperateur->echantillons_traites ?? 0 }}</h3>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-lg-6 mb-4">
-            <div class="card kpi-card bg-c-success">
-                <div class="card-body text-center">
-                    <i class="fas fa-check-circle kpi-icon"></i>
-                    <h6 class="mb-3 tx-14">العينات المعالجة</h6>
-                    <h3 class="font-weight-bold mb-1">{{ $echantillonsTraites ?? 0 }}</h3>
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card kpi-card success">
+                <i class="fas fa-check-double kpi-icon"></i>
+                <div class="kpi-content">
+                    <h6>العينات المكتملة</h6>
+                    <h3>{{ $statsOperateur->echantillons_complets ?? 0 }}</h3>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-lg-6 mb-4">
-            <div class="card kpi-card bg-c-danger">
-                <div class="card-body text-center">
-                    <i class="fas fa-calendar-check kpi-icon"></i>
-                    <h6 class="mb-3 tx-14">إجمالي المواعيد</h6>
-                    <h3 class="font-weight-bold mb-1">{{ $totalRendezVous ?? 0 }}</h3>
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card kpi-card warning">
+                <i class="fas fa-puzzle-piece kpi-icon"></i>
+                <div class="kpi-content">
+                    <h6>الجزئيات</h6>
+                    <h3>{{ $statsOperateur->echantillons_partiels ?? 0 }}</h3>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-lg-6 mb-4">
-            <div class="card kpi-card bg-c-warning">
-                <div class="card-body text-center">
-                    <i class="fas fa-bullseye kpi-icon"></i>
-                    <h6 class="mb-3 tx-14">معدل الفعالية</h6>
-                    <h3 class="font-weight-bold mb-1">{{ $tauxDefficacite ?? 0 }}%</h3>
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card kpi-card teal">
+                <i class="fas fa-calendar-check kpi-icon"></i>
+                <div class="kpi-content">
+                    <h6>موعد (مع جزئي)</h6>
+                    <h3>{{ $statsOperateur->rdv_avec_partiel_count ?? 0 }}</h3>
                 </div>
             </div>
         </div>
-    </div>
-
-    {{-- Tableaux des statuts --}}
-    @php
-        // Tableau de traduction. Assurez-vous que les clés correspondent aux statuts de la base de données.
-        $statutTranslations = [
-            'Complet' => 'مكتمل', 'Partiel' => 'مكتمل جزئيا',
-            'Rendez-vous' => 'موعد', 'À rappeler' => 'إعادة إتصال', 'Refus' => 'رفض',
-            'Refus final' => 'رفض كلي', 'Impossible de contacter' => 'إستحالة الإتصال',
-            'En attente' => 'في الانتظار', 'Confirmé' => 'مؤكد', 'Annulé' => 'ملغى', 'Reporté' => 'مؤجل',
-        ];
-    @endphp
-
-    <div class="row row-sm">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header"><h4 class="card-title mb-0">توزيع حالات العينات (الإجمالي)</h4></div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-custom">
-                            <tbody>
-                                @forelse($entreprisesParStatut as $statut => $count)
-                                    @php
-                                        // Logique pour obtenir la traduction et la couleur
-                                        $translatedStatus = $statutTranslations[$statut] ?? $statut;
-                                        $badgeColor = $colorMap[$translatedStatus] ?? '#6c757d'; // Couleur par défaut
-                                        $isLightColor = $translatedStatus === 'في الانتظار';
-                                    @endphp
-                                    <tr>
-                                        <td>{{ $translatedStatus }}</td>
-                                        <td class="text-left">
-                                            {{-- AMÉLIORATION : La couleur du badge est maintenant dynamique et cohérente --}}
-                                            <span class="badge badge-custom" style="background-color: {{ $badgeColor }}; color: {{ $isLightColor ? '#333' : 'white' }};">
-                                                {{ $count }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td class="text-center" colspan="2">لا توجد بيانات.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header"><h4 class="card-title mb-0">توزيع حالات العينات (اليوم)</h4></div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-custom">
-                            <tbody>
-                                @forelse($statutsAujourdhui as $statut => $count)
-                                     @php
-                                        $translatedStatus = $statutTranslations[$statut] ?? $statut;
-                                        $badgeColor = $colorMap[$translatedStatus] ?? '#6c757d';
-                                        $isLightColor = $translatedStatus === 'في الانتظار';
-                                    @endphp
-                                    <tr>
-                                        <td>{{ $translatedStatus }}</td>
-                                        <td class="text-left">
-                                             <span class="badge badge-custom" style="background-color: {{ $badgeColor }}; color: {{ $isLightColor ? '#333' : 'white' }};">
-                                                {{ $count }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td class="text-center" colspan="2">لا توجد بيانات لهذا اليوم.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card kpi-card info">
+                <i class="fas fa-calendar-plus kpi-icon"></i>
+                <div class="kpi-content">
+                    <h6>موعد (بدون جزئي)</h6>
+                    <h3>{{ $statsOperateur->rdv_sans_partiel_count ?? 0 }}</h3>
                 </div>
             </div>
         </div>
@@ -354,61 +263,82 @@
     // Le script ne s'exécute que si les données du graphique existent pour éviter les erreurs
     @if(isset($selectedTeleoperateur) && !empty($evolutionChartData))
     document.addEventListener('DOMContentLoaded', function () {
+        const evolutionChartData = @json($evolutionChartData);
+
+        // --- DEBUGGING: Log data to the browser console to check its content ---
+        console.log("Données du graphique d'évolution :", evolutionChartData);
+
         const ctx = document.getElementById('evolutionChart');
         if (ctx) {
-            new Chart(ctx, {
-                type: 'line', // Type de graphique
-                data: {
-                    labels: @json($evolutionChartData['labels'] ?? []),
-                    datasets: [
-                    {
-                        label: 'عينات مكتملة',
-                        data: @json($evolutionChartData['completedData'] ?? []),
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#22c55e',
-                        pointHoverRadius: 7,
-                        pointRadius: 5
-                    },
-                    {
-                        label: 'عينات مكتملة جزئيا',
-                        data: @json($evolutionChartData['partialData'] ?? []),
-                        borderColor: '#f97316',
-                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#f97316',
-                        pointHoverRadius: 7,
-                        pointRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { font: { family: 'Cairo', size: 14 } } },
-                        tooltip: {
-                            titleFont: { family: 'Cairo', size: 14 },
-                            bodyFont: { family: 'Cairo', size: 12 },
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { stepSize: 1, font: { family: 'Cairo' } },
-                            grid: { drawBorder: false }
+            // Check if there is actually data to display (more than just zeros)
+            const hasData = evolutionChartData.completedData.some(item => item > 0) || evolutionChartData.partialData.some(item => item > 0);
+
+            if (hasData) {
+                new Chart(ctx, {
+                    type: 'bar', // ✅ CHANGEMENT: Type de graphique changé en 'bar' (histogramme)
+                    data: {
+                        labels: evolutionChartData.labels,
+                        datasets: [
+                        {
+                            label: 'عينات مكتملة',
+                            data: evolutionChartData.completedData,
+                            backgroundColor: 'rgba(80, 227, 194, 0.8)', // Couleur de fond solide
+                            borderColor: 'var(--success-color)',
+                            borderWidth: 2,
+                            borderRadius: 5
                         },
-                        x: {
-                            ticks: { font: { family: 'Cairo' } },
-                            grid: { display: false }
+                        {
+                            label: 'عينات مكتملة جزئيا',
+                            data: evolutionChartData.partialData,
+                            backgroundColor: 'rgba(245, 166, 35, 0.8)', // Couleur de fond solide
+                            borderColor: 'var(--warning-color)',
+                            borderWidth: 2,
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { font: { family: 'Cairo', size: 14 } } },
+                            tooltip: {
+                                titleFont: { family: 'Cairo', size: 14 },
+                                bodyFont: { family: 'Cairo', size: 12 },
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                ticks: { 
+                                    stepSize: 1, 
+                                    font: { family: 'Cairo' },
+                                    color: 'var(--text-color)'
+                                },
+                                grid: { 
+                                    drawBorder: false,
+                                    color: 'var(--border-color)'
+                                }
+                            },
+                            x: {
+                                ticks: { 
+                                    font: { family: 'Cairo' },
+                                    color: 'var(--text-color)'
+                                },
+                                grid: { display: false }
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                // S'il n'y a pas de données, afficher un message sur le canvas
+                const context = ctx.getContext('2d');
+                ctx.height = 100; // Réduire la hauteur pour le message
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.font = "16px 'Cairo', sans-serif";
+                context.fillStyle = '#6c757d';
+                context.fillText('لا توجد بيانات لرسم المخطط لهذه الفترة', ctx.width / 2, 50);
+            }
         }
     });
     @endif

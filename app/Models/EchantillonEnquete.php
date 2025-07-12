@@ -107,4 +107,8 @@ class EchantillonEnquete extends Model
 {
     return $this->hasMany(Appel::class, 'echantillon_enquete_id');
 }
+public function statusHistories(): HasMany
+    {
+        return $this->hasMany(EchantillonStatutHistory::class, 'echantillon_enquete_id');
+    }
 }
