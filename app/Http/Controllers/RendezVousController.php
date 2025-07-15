@@ -16,52 +16,58 @@ use Illuminate\Validation\ValidationException as LaravelValidationException;
 
 class RendezVousController extends Controller
 {
-    /**
-     * Affiche la liste principale des rendez-vous de l'utilisateur.
-     */
-  public function index(Request $request)
-    {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Vous devez être connecté.');
-        }
-
-        $user = Auth::user();
-        $searchTerm = $request->input('search_term');
-        $dateDebut = $request->input('date_debut');
-        $dateFin = $request->input('date_fin');
-
-        $statusesToExclude = ['complet', 'impossible de contacter', 'refus', 'termine', 'refus final'];
-        $excludedEchantillonIds = EchantillonEnquete::where('utilisateur_id', $user->id)
-            ->whereIn(DB::raw('LOWER(TRIM(statut))'), $statusesToExclude)
-            ->pluck('id');
-
-        $rendezVousQuery = RendezVous::where('utilisateur_id', $user->id)
-            ->whereNotIn('echantillon_enquete_id', $excludedEchantillonIds);
-
-        if ($searchTerm) {
-            $rendezVousQuery->whereHas('echantillonEnquete.entreprise', function ($query) use ($searchTerm) {
-                $query->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
-            });
-        }
-        if ($dateDebut) { try { $rendezVousQuery->where('heure_rdv', '>=', Carbon::parse($dateDebut)->startOfDay()); } catch(Exception $e) {} }
-        if ($dateFin) { try { $rendezVousQuery->where('heure_rdv', '<=', Carbon::parse($dateFin)->endOfDay()); } catch(Exception $e) {} }
-
-        $rendezVous = $rendezVousQuery
-            ->with('echantillonEnquete.entreprise')
-            ->orderByRaw("CASE WHEN heure_rdv IS NULL THEN 1 ELSE 0 END ASC, ABS(DATEDIFF(second, heure_rdv, GETDATE())) ASC")
-            ->paginate(10)
-            ->appends($request->query());
-
-        // Calcul des statistiques
-        $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu', 'Complet'])
-                                                        ->where('utilisateur_id', $user->id)
-                                                        ->count();
-        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
-                                                          ->count();
-
-        return view('indexRDV', compact('rendezVous', 'nombreEntreprisesRepondues', 'nombreEntreprisesAttribuees'));
+   
+    public function index(Request $request)
+{
+    if (!Auth::check()) {
+        return redirect()->route('login')->with('error', 'Vous devez être connecté.');
     }
 
+    $user = Auth::user();
+    $searchTerm = $request->input('search_term');
+    $dateDebut = $request->input('date_debut');
+    $dateFin = $request->input('date_fin');
+
+    $statusesToExclude = ['complet', 'impossible de contacter', 'refus', 'termine', 'refus final'];
+    $excludedEchantillonIds = EchantillonEnquete::where('utilisateur_id', $user->id)
+        ->whereIn(DB::raw('LOWER(TRIM(statut))'), $statusesToExclude)
+        ->pluck('id');
+
+    // Sous-requête pour trouver le dernier ID de RDV pour chaque entreprise
+    $latestRdvIdsSubquery = DB::table('rendez_vous as r')
+        ->select(DB::raw('MAX(r.id) as last_id'))
+        // ✅ CORRIGÉ: Le nom de la table est "echantillons_enquetes"
+        ->join('echantillons_enquetes as ee', 'r.echantillon_enquete_id', '=', 'ee.id')
+        ->where('r.utilisateur_id', $user->id)
+        ->groupBy('ee.entreprise_id');
+
+    $rendezVousQuery = RendezVous::where('utilisateur_id', $user->id)
+        ->whereNotIn('echantillon_enquete_id', $excludedEchantillonIds)
+        ->whereIn('id', $latestRdvIdsSubquery);
+
+    if ($searchTerm) {
+        $rendezVousQuery->whereHas('echantillonEnquete.entreprise', function ($query) use ($searchTerm) {
+            $query->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
+        });
+    }
+    if ($dateDebut) { try { $rendezVousQuery->where('heure_rdv', '>=', Carbon::parse($dateDebut)->startOfDay()); } catch(Exception $e) {} }
+    if ($dateFin) { try { $rendezVousQuery->where('heure_rdv', '<=', Carbon::parse($dateFin)->endOfDay()); } catch(Exception $e) {} }
+
+    $rendezVous = $rendezVousQuery
+        ->with('echantillonEnquete.entreprise')
+        ->orderBy('heure_rdv', 'desc')
+        ->paginate(10)
+        ->appends($request->query());
+
+    $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu', 'Complet'])
+                                                      ->where('utilisateur_id', $user->id)
+                                                      ->count();
+    $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                                       ->count();
+
+    return view('indexRDV', compact('rendezVous', 'nombreEntreprisesRepondues', 'nombreEntreprisesAttribuees'));
+}
+    
 
     // ... La méthode showEntreprisePage() reste inchangée ...
     public function showEntreprisePage(Entreprise $entreprise, Request $request)
@@ -180,46 +186,55 @@ class RendezVousController extends Controller
     }
 
     /**
-     * Affiche les rendez-vous pour aujourd'hui.
+     * Affiche les rendez-vous pour aujourd'hui,
+     * en ne montrant que le dernier RDV pour chaque entreprise.
      */
    public function aujourdhui(Request $request)
-    {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Vous devez être connecté.');
-        }
-
-        $user = Auth::user();
-        $searchTerm = $request->input('search_entreprise');
-        
-        $statusesToExclude = ['complet', 'impossible de contacter', 'refus', 'termine', 'refus final'];
-        $excludedEchantillonIds = EchantillonEnquete::where('utilisateur_id', $user->id)
-            ->whereIn(DB::raw('LOWER(TRIM(statut))'), $statusesToExclude)
-            ->pluck('id');
-
-        $rendezVousQuery = RendezVous::where('utilisateur_id', $user->id)
-            ->whereDate('heure_rdv', Carbon::today())
-            ->whereNotIn('echantillon_enquete_id', $excludedEchantillonIds);
-
-        if ($searchTerm) {
-            $rendezVousQuery->whereHas('echantillonEnquete.entreprise', function ($query) use ($searchTerm) {
-                $query->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
-            });
-        }
-
-        $rendezVous = $rendezVousQuery
-            ->with('echantillonEnquete.entreprise')
-            ->orderByRaw("CASE WHEN CONVERT(time, heure_rdv) >= CONVERT(time, GETDATE()) THEN 0 ELSE 1 END ASC, ABS(DATEDIFF(second, heure_rdv, GETDATE())) ASC")
-            ->paginate(10, ['*'], 'page_aujourdhui')
-            ->appends($request->except('page'));
-        
-        // ✅ DÉBUT DE LA CORRECTION : Ajout des variables manquantes
-        $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu', 'Complet'])
-                                                        ->where('utilisateur_id', $user->id)
-                                                        ->count();
-        $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
-                                                          ->count();
-        // ✅ FIN DE LA CORRECTION
-
-        return view('aujourdhuiRDV', compact('rendezVous', 'nombreEntreprisesRepondues', 'nombreEntreprisesAttribuees'));
+{
+    if (!Auth::check()) {
+        return redirect()->route('login')->with('error', 'Vous devez être connecté.');
     }
+
+    $user = Auth::user();
+    $searchTerm = $request->input('search_entreprise');
+    
+    $statusesToExclude = ['complet', 'impossible de contacter', 'refus', 'termine', 'refus final'];
+    $excludedEchantillonIds = EchantillonEnquete::where('utilisateur_id', $user->id)
+        ->whereIn(DB::raw('LOWER(TRIM(statut))'), $statusesToExclude)
+        ->pluck('id');
+
+    // Sous-requête pour trouver le dernier ID de RDV pour chaque entreprise pour AUJOURD'HUI
+    $latestRdvIdsSubquery = DB::table('rendez_vous as r')
+        ->select(DB::raw('MAX(r.id) as last_id'))
+        // ✅ CORRIGÉ: Le nom de la table est "echantillons_enquetes"
+        ->join('echantillons_enquetes as ee', 'r.echantillon_enquete_id', '=', 'ee.id')
+        ->where('r.utilisateur_id', $user->id)
+        ->whereDate('r.heure_rdv', Carbon::today())
+        ->groupBy('ee.entreprise_id');
+
+    $rendezVousQuery = RendezVous::where('utilisateur_id', $user->id)
+        ->whereDate('heure_rdv', Carbon::today())
+        ->whereNotIn('echantillon_enquete_id', $excludedEchantillonIds)
+        ->whereIn('id', $latestRdvIdsSubquery);
+
+    if ($searchTerm) {
+        $rendezVousQuery->whereHas('echantillonEnquete.entreprise', function ($query) use ($searchTerm) {
+            $query->where('nom_entreprise', 'like', '%' . $searchTerm . '%');
+        });
+    }
+
+    $rendezVous = $rendezVousQuery
+        ->with('echantillonEnquete.entreprise')
+        ->orderBy('heure_rdv', 'asc')
+        ->paginate(10, ['*'], 'page_aujourdhui')
+        ->appends($request->except('page'));
+    
+    $nombreEntreprisesRepondues = EchantillonEnquete::whereIn('statut', ['termine', 'répondu', 'Complet'])
+                                                      ->where('utilisateur_id', $user->id)
+                                                      ->count();
+    $nombreEntreprisesAttribuees = EchantillonEnquete::where('utilisateur_id', $user->id)
+                                                       ->count();
+
+    return view('aujourdhuiRDV', compact('rendezVous', 'nombreEntreprisesRepondues', 'nombreEntreprisesAttribuees'));
+}
 }

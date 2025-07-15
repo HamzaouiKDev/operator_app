@@ -1,0 +1,22 @@
+<?php
+
+return [
+    'report_title' => 'تقرير الأداء',
+    'creation_date_prefix' => 'تاريخ الإنشاء: ',
+    'footer_text' => 'تم إنشاء هذا التقرير بواسطة تطبيق التيليوبيراتور',
+    'campaign_summary' => 'ملخص الحملة',
+    'operator_report_prefix' => 'تقرير الأداء للمتعامل: ',
+    'status' => 'الحالة',
+    'count' => 'العدد',
+    'percentage' => 'النسبة المئوية',
+    'percentage_per_operator' => 'النسبة المئوية للمتعامل',
+    'total_samples' => 'إجمالي العينات',
+    'assigned_samples' => 'العينات المخصصة',
+    'complets' => 'مكتمل',
+    'partiels' => 'جزئي',
+    'refus' => 'رفض',
+    'suivis' => 'للمتابعة',
+    'impossible' => 'غير ممكن',
+    'rdv_avec_partiel' => 'موعد مع جزئي',
+    'rdv_sans_partiel' => 'موعد بدون جزئي',
+];

@@ -72,46 +72,53 @@
             @endrole
 
 
-            {{-- ============================================= --}}
-            {{-- == SECTION TÉLÉOPÉRATEUR == --}}
-            {{-- ============================================= --}}
-            @role('Téléopérateur')
-                <li class="side-item side-item-category">برنامج ادارة مركز نداء</li>
-                <li class="slide">
-                    <a class="side-menu__item" href="{{ route('home') }}">
-                        <i class="side-menu__icon fas fa-home"></i><span class="side-menu__label">الرئيسية</span>
-                    </a>
-                </li>
+          {{-- ============================================= --}}
+{{-- == SECTION TÉLÉOPÉRATEUR == --}}
+{{-- ============================================= --}}
+@role('Téléopérateur')
+    <li class="side-item side-item-category">برنامج ادارة مركز نداء</li>
+    <li class="slide">
+        <a class="side-menu__item" href="{{ route('home') }}">
+            <i class="side-menu__icon fas fa-home"></i><span class="side-menu__label">الرئيسية</span>
+        </a>
+    </li>
 
-                {{-- Menu déroulant pour les rendez-vous --}}
-                <li class="slide">
-                    <a class="side-menu__item" data-toggle="slide" href="#">
-                        <i class="side-menu__icon fas fa-calendar-alt"></i><span class="side-menu__label">المواعيد</span><i class="angle fe fe-chevron-down"></i>
-                    </a>
-                    <ul class="slide-menu">
-                        <li><a class="slide-item" href="{{ route('rendezvous.aujourdhui') }}">مواعيد اليوم</a></li>
-                        <li><a class="slide-item" href="{{ route('rendezvous.index') }}">قائمة كل المواعيد</a></li>
-                    </ul>
-                </li>
+    {{-- Menu déroulant pour les rendez-vous --}}
+    <li class="slide">
+        <a class="side-menu__item" data-toggle="slide" href="#">
+            <i class="side-menu__icon fas fa-calendar-alt"></i><span class="side-menu__label">المواعيد</span><i class="angle fe fe-chevron-down"></i>
+        </a>
+        <ul class="slide-menu">
+            <li><a class="slide-item" href="{{ route('rendezvous.aujourdhui') }}">مواعيد اليوم</a></li>
+            <li><a class="slide-item" href="{{ route('rendezvous.index') }}">قائمة كل المواعيد</a></li>
+        </ul>
+    </li>
 
-                <li class="slide">
-                    <a class="side-menu__item" href="{{ route('suivis.index') }}">
-                        <i class="side-menu__icon fas fa-history"></i><span class="side-menu__label">قائمة المتابعات</span>
-                    </a>
-                </li>
-                <li class="slide">
-                    <a class="side-menu__item" href="{{ route('echantillons.en_attente') }}">
-                        <i class="side-menu__icon typcn typcn-time"></i>
-                        <span class="side-menu__label">قائمة العينات في الانتظار</span>
-                    </a>
-                </li>
-                
-                <li class="slide">
-                    <a class="side-menu__item" href="{{ route('statistiques.index') }}">
-                        <i class="side-menu__icon fas fa-chart-bar"></i><span class="side-menu__label">التقارير</span>
-                    </a>
-                </li>
-            @endrole
+    {{-- ✅ DÉBUT DE LA MODIFICATION : Liens directs pour les échantillons --}}
+    <li class="slide">
+        <a class="side-menu__item" href="{{ route('echantillons.partiels') }}">
+            <i class="side-menu__icon fas fa-edit"></i><span class="side-menu__label">العينات الجزئية</span>
+        </a>
+    </li>
+    <li class="slide">
+        <a class="side-menu__item" href="{{ route('echantillons.en_attente') }}">
+            <i class="side-menu__icon typcn typcn-time"></i><span class="side-menu__label">قائمة العينات في الانتظار</span>
+        </a>
+    </li>
+    {{-- ✅ FIN DE LA MODIFICATION --}}
+
+    <li class="slide">
+        <a class="side-menu__item" href="{{ route('suivis.index') }}">
+            <i class="side-menu__icon fas fa-history"></i><span class="side-menu__label">قائمة المتابعات</span>
+        </a>
+    </li>
+    
+    <li class="slide">
+        <a class="side-menu__item" href="{{ route('statistiques.index') }}">
+            <i class="side-menu__icon fas fa-chart-bar"></i><span class="side-menu__label">التقارير</span>
+        </a>
+    </li>
+@endrole
 
         </ul>
     </div>

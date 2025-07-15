@@ -257,23 +257,27 @@
                                         <th>موعد (بدون رد جزئي)</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @forelse($teleoperateurs as $teleoperateur)
-                                        <tr>
-                                            <td>{{ $teleoperateur->name }}</td>
-                                            <td><span class="badge bg-secondary-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_traites }}</span></td>
-                                            <td><span class="badge bg-success-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_complets }}</span></td>
-                                            <td><span class="badge bg-warning-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_partiels }}</span></td>
-                                            {{-- ✅ NOUVELLES COLONNES --}}
-                                            <td><span class="badge bg-teal-transparent badge-custom stat-number">{{ $teleoperateur->rdv_avec_partiel_count }}</span></td>
-                                            <td><span class="badge bg-info-transparent badge-custom stat-number">{{ $teleoperateur->rdv_sans_partiel_count }}</span></td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted">لم يتم العثور على أي مشغل هاتفي.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
+                               {{-- Dans la vue admin.dashboard.index --}}
+
+<tbody>
+    @forelse($teleoperateurs as $teleoperateur)
+        <tr>
+            <td>{{ $teleoperateur->name }}</td>
+            
+            {{-- ✅ CORRECTION : Utilisation des noms avec _count générés par withCount --}}
+            <td><span class="badge bg-secondary-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_traites_count }}</span></td>
+            <td><span class="badge bg-success-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_complets_count }}</span></td>
+            <td><span class="badge bg-warning-transparent badge-custom stat-number">{{ $teleoperateur->echantillons_partiels_count }}</span></td>
+            <td><span class="badge bg-teal-transparent badge-custom stat-number">{{ $teleoperateur->rdv_avec_partiel_count }}</span></td>
+            <td><span class="badge bg-info-transparent badge-custom stat-number">{{ $teleoperateur->rdv_sans_partiel_count }}</span></td>
+            
+        </tr>
+    @empty
+        <tr>
+            <td colspan="6" class="text-center text-muted">لم يتم العثور على أي مشغل هاتفي.</td>
+        </tr>
+    @endforelse
+</tbody>
                             </table>
                         </div>
                     </div>

@@ -11,11 +11,13 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TelephoneController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\RendezVousController;
+use App\Http\Controllers\SupervisorController;
 use App\Http\Controllers\EchantillonController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StatistiquesController;
 use App\Http\Controllers\Admin\EnqueteController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\EchantillonPartielController;
 use App\Http\Controllers\Admin\EntrepriseImportController;
 use App\Http\Controllers\Admin\EchantillonImportController;
 
@@ -78,10 +80,10 @@ Route::middleware(['auth'])->group(function () {
     // Seuls les utilisateurs avec le rôle 'Superviseur' (et 'Admin' pour la visibilité) peuvent y accéder.
     //======================================================================
     Route::middleware(['role:Superviseur|Admin'])->prefix('supervisor')->name('supervisor.')->group(function () {
-
+    Route::get('/report/pdf', [SupervisorController::class, 'generatePdfReport'])->name('report.pdf');
         // Affiche le tableau de bord avec le sélecteur de téléopérateur
         // et les statistiques si un opérateur est choisi.
-        Route::get('/dashboard', [App\Http\Controllers\SupervisorController::class, 'index'])
+        Route::get('/dashboard', [SupervisorController::class, 'index'])
              ->name('dashboard');
 
     });
@@ -98,6 +100,8 @@ Route::middleware(['auth'])->group(function () {
         // --- Gestion des Échantillons et des Appels ---
         Route::prefix('echantillons')->name('echantillons.')->group(function () {
             Route::get('/en-attente', [EchantillonController::class, 'listeEnAttente'])->name('en_attente');
+            Route::get('/partiels', [EchantillonPartielController::class, 'index'])->name('partiels');
+
             Route::get('/', [EchantillonController::class, 'index'])->name('index');
             Route::get('/{echantillon}', [EchantillonController::class, 'show'])->name('show');
             Route::post('/next', [EchantillonController::class, 'next'])->name('next');

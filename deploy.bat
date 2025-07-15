@@ -1,6 +1,6 @@
 @echo off
 REM ===================================================================
-REM ==    SCRIPT DE DEPLOIEMENT POUR WINDOWS (.bat) - Version Corrigée ==
+REM ==  SCRIPT DE DEPLOIEMENT POUR WINDOWS (.bat) - Sans Migrations  ==
 REM ===================================================================
 
 echo --- Demarrage du deploiement en production ---
@@ -24,7 +24,7 @@ echo Attente de 10 secondes pour la stabilisation des services...
 timeout /t 10 /nobreak > nul
 
 REM ======================= CORRECTION DES PERMISSIONS ======================
-REM == On donne la propriete des fichiers a l'utilisateur 'laravel'        ==
+REM == On donne la propriete des fichiers a l'utilisateur 'laravel'       ==
 REM == en executant la commande en tant que 'root' a l'interieur du conteneur. ==
 REM =========================================================================
 echo Correction des permissions des fichiers dans le conteneur...
@@ -43,11 +43,11 @@ docker-compose exec -T -u laravel app php artisan view:clear
 docker-compose exec -T -u laravel app php artisan event:clear
 
 REM 6. Executer les migrations et le seeding de la base de donnees.
-echo Execution des migrations de base de donnees...
-docker-compose exec -T -u laravel app php artisan migrate --force
+REM echo Execution des migrations de base de donnees...
+REM docker-compose exec -T -u laravel app php artisan migrate --force
 
-echo Initialisation de la base de donnees avec les seeders...
-docker-compose exec -T -u laravel app php artisan db:seed --force
+REM echo Initialisation de la base de donnees avec les seeders...
+REM docker-compose exec -T -u laravel app php artisan db:seed --force
 
 
 REM 7. Creer les nouveaux fichiers de cache optimises pour la production.
